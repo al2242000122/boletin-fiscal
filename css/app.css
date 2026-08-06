@@ -1,0 +1,292 @@
+/* ==========================================================================
+   app.css — interfaz de la aplicación (barra, lienzo, estados de edición).
+   Nada de aquí forma parte del boletín; todo lo marcado .no-print se oculta
+   al imprimir y se retira antes de exportar el PNG.
+   ========================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body{
+  margin: 0;
+  font-family: var(--sans);
+  color: #E9EDF2;
+  background: #202832;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Barra de herramientas --------------------------------------------- */
+.barra{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 20px;
+  background: #161C24;
+  border-bottom: 1px solid #2C3540;
+}
+
+.barra-marca{
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  margin-right: 6px;
+}
+.barra-marca b{ font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+.barra-marca span{ font-size: 11px; color: #93A1B1; }
+
+.barra-grupo{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.barra-grupo + .barra-grupo{
+  padding-left: 18px;
+  border-left: 1px solid #2C3540;
+}
+.barra-espacio{ margin-left: auto; }
+
+.barra-etq{
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #7E8C9C;
+  margin-right: 2px;
+}
+
+/* ---- Botones ------------------------------------------------------------ */
+.btn{
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  padding: 9px 14px;
+  border-radius: 6px;
+  border: 1px solid #38434F;
+  background: #232C36;
+  color: #E9EDF2;
+  cursor: pointer;
+  transition: background .12s ease, border-color .12s ease;
+}
+.btn:hover{ background: #2B3641; border-color: #485665; }
+.btn:active{ background: #1E262F; }
+.btn:focus-visible{ outline: 2px solid #4FA3DA; outline-offset: 2px; }
+.btn[disabled]{ opacity: .45; cursor: not-allowed; }
+
+.btn-primario{
+  background: #1D6FA5;
+  border-color: #1D6FA5;
+  color: #fff;
+  font-weight: 600;
+}
+.btn-primario:hover{ background: #2280BC; border-color: #2280BC; }
+.btn-primario.activo{ background: #1E8C74; border-color: #1E8C74; }
+.btn-primario.activo:hover{ background: #23A085; border-color: #23A085; }
+
+.btn-mini{
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 4px;
+}
+
+.nota{
+  font-size: 11.5px;
+  color: #9AA8B7;
+  max-width: 260px;
+  line-height: 1.35;
+}
+
+.restaurado{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: #C7D3E0;
+  background: #232C36;
+  border: 1px solid #38434F;
+  border-radius: 6px;
+  padding: 5px 8px 5px 12px;
+}
+
+/* ---- Galería de plantillas ---------------------------------------------- */
+.galeria, .temas{ display: flex; align-items: flex-end; gap: 6px; }
+
+.plantilla-op{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 7px 5px;
+  border: 1px solid #38434F;
+  border-radius: 6px;
+  background: #232C36;
+  color: #93A1B1;
+  font: inherit;
+  font-size: 9.5px;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, color .12s ease;
+}
+.plantilla-op:hover{ background: #2B3641; border-color: #56677A; color: #D5DEE8; }
+.plantilla-op.activa{ border-color: #4FA3DA; background: #1B2C3B; color: #EAF2F9; }
+.plantilla-op:focus-visible{ outline: 2px solid #4FA3DA; outline-offset: 2px; }
+.plantilla-nom{ white-space: nowrap; letter-spacing: .01em; }
+
+/* Miniaturas dibujadas con divs: sin imágenes, funcionan sin internet. */
+.mini{
+  position: relative;
+  display: block;
+  background: #fff;
+  border: 1px solid #4A5866;
+  overflow: hidden;
+}
+.mini i{ position: absolute; display: block; }
+.mini .m-navy { background: #0A2540; }
+.mini .m-navy2{ background: #123A63; }
+.mini .m-acc  { background: #1D6FA5; }
+.mini .m-soft { background: #D9E5F0; }
+.mini .m-ln   { background: #B9C6D3; }
+
+/* ---- Temas --------------------------------------------------------------- */
+.tema-op{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px 7px 8px;
+  border: 1px solid #38434F;
+  border-radius: 6px;
+  background: #232C36;
+  color: #93A1B1;
+  font: inherit;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: border-color .12s ease, background .12s ease, color .12s ease;
+}
+.tema-op:hover{ background: #2B3641; border-color: #56677A; color: #D5DEE8; }
+.tema-op.activa{ border-color: #4FA3DA; background: #1B2C3B; color: #EAF2F9; }
+.tema-op:focus-visible{ outline: 2px solid #4FA3DA; outline-offset: 2px; }
+
+.muestra{
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: linear-gradient(90deg, var(--navy) 0 55%, var(--acc) 55% 100%);
+}
+
+/* ---- Avisos -------------------------------------------------------------- */
+.aviso{
+  font-size: 12px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: transparent;
+  color: #9AA8B7;
+  opacity: 0;
+  transition: opacity .15s ease;
+  max-width: 420px;
+}
+.aviso.visible{ opacity: 1; background: #232C36; }
+.aviso-ok.visible{ color: #7ED8BF; }
+.aviso-error.visible{ color: #FFB3BC; background: #3A2028; }
+
+/* ---- Lienzo y hoja ------------------------------------------------------- */
+.lienzo{
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 60px);
+  overflow: auto;
+}
+
+.envoltorio{ position: relative; }
+
+.hoja{
+  position: relative;
+  overflow: hidden;
+  background: var(--hoja-bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  transform-origin: top left;
+}
+
+/* ==========================================================================
+   Estados de edición — solo dentro de .editando
+   ========================================================================== */
+
+.editando [contenteditable]:hover { outline: 1px dashed rgba(29,111,165,.55); outline-offset: 3px; }
+.editando [contenteditable]:focus { outline: 2px solid var(--acc); outline-offset: 3px;
+                                    background: rgba(29,111,165,.06); }
+
+/* Un campo vaciado del todo sigue siendo clicable. */
+.editando [contenteditable]:empty{ min-width: 26px; min-height: 1em; display: inline-block; }
+
+.editando [data-foto]{ cursor: pointer; }
+.editando [data-foto]::after{
+  content: "Cambiar fotografía";
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 3;
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  border-radius: 4px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity .12s ease;
+  pointer-events: none;
+}
+.editando [data-foto]:hover::after{ opacity: 1; }
+
+/* ---- Controles de viñetas ------------------------------------------------ */
+.solo-edicion{ display: none; }
+.editando .solo-edicion{ display: inline-flex; }
+
+.quitar-vineta{
+  position: absolute;
+  left: -4px;
+  top: 1px;
+  z-index: 4;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  font: 700 13px/1 var(--sans);
+  border: 0;
+  border-radius: 50%;
+  background: var(--bad);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .1s ease;
+}
+.editando .it:hover .quitar-vineta{ opacity: 1; }
+.editando .it:hover::before{ opacity: 0; }
+.quitar-vineta:focus-visible{ opacity: 1; outline: 2px solid #fff; outline-offset: 1px; }
+.quitar-vineta[disabled]{ background: #98A2AC; cursor: not-allowed; }
+
+.agregar-vineta{
+  position: absolute;
+  right: 0;
+  bottom: -17px;
+  z-index: 4;
+  align-items: center;
+  padding: 2px 8px;
+  font: 600 10px/1.5 var(--sans);
+  letter-spacing: .04em;
+  border: 1px solid var(--acc);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--acc);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.agregar-vineta:hover{ background: var(--acc); color: #fff; }
+.agregar-vineta:focus-visible{ outline: 2px solid var(--acc); outline-offset: 2px; }
+.agregar-vineta.dentro{ right: 8px; bottom: 6px; }

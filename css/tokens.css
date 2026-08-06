@@ -1,0 +1,64 @@
+/* ==========================================================================
+   tokens.css — variables de diseño y temas
+   Los temas son SOLO sustitución de variables. Nunca cambian el layout.
+   Se aplican con [data-tema] sobre el contenedor .hoja.
+   ========================================================================== */
+
+:root{
+  /* Paleta base — tema "azul" */
+  --navy:      #0A2540;   /* fondos oscuros, títulos */
+  --navy-2:    #123A63;   /* bandas secundarias */
+  --acc:       #1D6FA5;   /* acento, viñetas, reglas */
+  --soft:      #E4EDF5;   /* cajas suaves */
+  --ink:       #17232F;   /* texto principal */
+  --mut:       #5D6E7E;   /* texto secundario */
+  --rule:      #DCE4EC;   /* hairlines */
+  --bad:       #B03A48;   /* riesgos */
+  --ok:        #1E8C74;   /* recomendaciones */
+
+  --sans: "Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif: Georgia,"Times New Roman",serif;
+
+  /* Derivadas — necesarias para que degradados y textos sobre oscuro
+     sigan al tema sin escribir reglas por plantilla. */
+  --navy-rgb:  10,37,64;      /* componentes de --navy, para rgba() */
+  --navy-hondo:#061A2E;       /* franja más honda que --navy (plantilla 4) */
+  --hoja-bg:   #ffffff;       /* fondo de la hoja */
+  --sobre-navy:      #FFFFFF; /* texto principal sobre fondo oscuro */
+  --sobre-navy-mut:  #A9C4DA; /* texto secundario sobre fondo oscuro */
+  --sobre-soft:      var(--ink); /* texto sobre la caja suave */
+}
+
+/* --- Tema azul (explícito, para que el selector pueda fijarlo) ----------- */
+[data-tema="azul"]{
+  --navy:#0A2540;  --navy-2:#123A63;  --acc:#1D6FA5;  --soft:#E4EDF5;
+  --ink:#17232F;   --mut:#5D6E7E;     --rule:#DCE4EC; --bad:#B03A48; --ok:#1E8C74;
+  --navy-rgb:10,37,64;
+  --navy-hondo:#061A2E;
+  --hoja-bg:#ffffff;
+  --sobre-navy:#FFFFFF; --sobre-navy-mut:#A9C4DA; --sobre-soft:var(--ink);
+}
+
+/* --- Tema verde --------------------------------------------------------- */
+[data-tema="verde"]{
+  --navy:#12352C;  --navy-2:#1B4A3D;  --acc:#C6742A;  --soft:#EFE9DC;
+  --ink:#17232F;   --mut:#5D6E7E;     --rule:#DCE4EC; --bad:#B03A48; --ok:#1E8C74;
+  --navy-rgb:18,53,44;
+  --navy-hondo:#0B241D;
+  --hoja-bg:#ffffff;
+  --sobre-navy:#FFFFFF; --sobre-navy-mut:#BFD3C6; --sobre-soft:var(--ink);
+}
+
+/* --- Tema nocturno -----------------------------------------------------------
+   Bloque completo, no parches: además de la paleta hay que invertir tinta,
+   texto secundario, hairlines y el fondo de la hoja. --bad y --ok se aclaran
+   porque los originales no contrastan sobre #0E1116.
+   -------------------------------------------------------------------------- */
+[data-tema="nocturno"]{
+  --navy:#0E1116;  --navy-2:#161B22;  --acc:#C9A227;  --soft:#1A1F26;
+  --ink:#E7E9EC;   --mut:#8A9199;     --rule:#1E242C; --bad:#E2707C; --ok:#4FC0A5;
+  --navy-rgb:14,17,22;
+  --navy-hondo:#05070A;
+  --hoja-bg:var(--navy);
+  --sobre-navy:#F1F3F5; --sobre-navy-mut:#98A2AD; --sobre-soft:var(--ink);
+}

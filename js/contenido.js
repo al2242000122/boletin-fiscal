@@ -1,0 +1,98 @@
+/* ==========================================================================
+   contenido.js — modelo de datos del boletín
+   ATENCIÓN: los textos son transcripción del documento del cliente.
+   No parafrasear, no "mejorar", no agregar ni quitar secciones.
+   Todo lo que se ve en pantalla sale de aquí; editar en pantalla escribe aquí.
+   ========================================================================== */
+
+var CONTENIDO_INICIAL = {
+  meta: {
+    kicker: "Boletín fiscal · Agosto 2026",
+    mes: "Agosto 2026",
+    articulo: "Artículo 49 Bis",
+    ordenamiento: "del Código Fiscal de la Federación",
+    subtitulo: "Visita domiciliaria para verificar la materialidad de las operaciones",
+    plazo: { numero: "24", unidad: "días hábiles" }
+  },
+
+  gancho: "Si el SAT visitara hoy su empresa, ¿podría demostrar en pocos días que cada operación facturada ocurrió realmente, con evidencia de entrega, trazabilidad de pago, respaldo logístico y capacidad operativa?",
+
+  secciones: [
+    {
+      id: "quees",
+      titulo: "¿Qué es el artículo 49 Bis?",
+      tipo: "parrafo",
+      texto: "El artículo 49 Bis del Código Fiscal de la Federación establece un procedimiento de visita domiciliaria que puede iniciar y concluir en 24 días hábiles, que permite al SAT verificar a aquellos contribuyentes respecto de los cuales existan indicios de que emiten CFDI que amparan operaciones inexistentes, simuladas o sin sustancia económica."
+    },
+    {
+      id: "puede",
+      titulo: "¿Qué puede hacer el SAT?",
+      tipo: "lista",
+      entrada: "Durante este procedimiento la autoridad podrá:",
+      items: [
+        "Realizar visitas en el domicilio fiscal, sucursales o establecimientos.",
+        "Revisar la existencia material del negocio.",
+        "Verificar infraestructura, activos, personal y capacidad operativa.",
+        "Solicitar contratos, registros contables, estados de cuenta y demás documentación que acredite la realidad de las operaciones.",
+        "Suspender temporalmente la emisión de CFDI durante el procedimiento, cuando así lo establezca la orden de visita."
+      ]
+    },
+    {
+      id: "riesgos",
+      titulo: "¿Cuáles son los riesgos?",
+      tipo: "lista",
+      tono: "riesgo",
+      entrada: "Una revisión bajo este procedimiento puede generar:",
+      items: [
+        "Suspensión de la emisión de comprobantes fiscales.",
+        "Interrupción de la operación comercial.",
+        "Observaciones fiscales que deriven en créditos fiscales.",
+        "Riesgos para clientes y proveedores relacionados con las operaciones observadas.",
+        "Posibles responsabilidades administrativas o penales en los casos previstos por la ley."
+      ]
+    },
+    {
+      id: "preparacion",
+      titulo: "¿Cómo prepararse?",
+      tipo: "lista",
+      tono: "recomendacion",
+      entrada: "Se recomienda que las empresas:",
+      items: [
+        "Mantengan expedientes completos de cada operación.",
+        "Conserven evidencia documental de la prestación de servicios o entrega de bienes.",
+        "Verifiquen la congruencia entre contratos, CFDI, pagos y registros contables.",
+        "Implementen controles internos para validar la materialidad de sus operaciones.",
+        "Atiendan oportunamente cualquier requerimiento de la autoridad."
+      ]
+    },
+    {
+      id: "consejo",
+      titulo: "Nuestro consejo",
+      tipo: "parrafo",
+      destacado: true,
+      texto: "La mejor defensa frente a una auditoría exprés no se construye durante la visita. Se construye antes, con expedientes de materialidad ordenados, procesos documentales sólidos y una relación de confianza con un equipo fiscal que conozca a fondo la operación del negocio."
+    },
+    {
+      id: "apoyo",
+      titulo: "¿Necesita apoyo?",
+      tipo: "lista",
+      entrada: "Nuestro equipo puede ayudarle a:",
+      items: [
+        "Revisar el cumplimiento de sus obligaciones fiscales.",
+        "Evaluar la materialidad de sus operaciones.",
+        "Preparar expedientes de soporte documental.",
+        "Brindar acompañamiento durante actos de fiscalización del SAT."
+      ]
+    }
+  ],
+
+  pie: {
+    entrada: "Para más información o comentarios sobre esta publicación contacte a:",
+    firma: "International Support Services, S.C.",
+    correos: "jmdm@insuser.mx · dff@insuser.mx"
+  },
+
+  // La foto por defecto va incrustada como data URL (js/foto-default.js).
+  // El original sigue en assets/torre.jpg. Ver la nota de ese archivo.
+  foto: (typeof FOTO_POR_DEFECTO === "string" ? FOTO_POR_DEFECTO : "assets/torre.jpg")
+};

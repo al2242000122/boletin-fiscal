@@ -1,0 +1,99 @@
+/* ==========================================================================
+   print.css — impresión a PDF. Cada plantilla, una sola página.
+
+   La regla @page no se puede condicionar con un selector, así que el tamaño
+   y la orientación los inyecta exportar.js justo antes de imprimir según la
+   plantilla activa (ver Exportar.reglaPagina). Aquí van las reglas que sí
+   admiten selector, y el @page por defecto (carta), que es el de las
+   plantillas 1 y 3.
+   ========================================================================== */
+
+@page{ size: letter; margin: 0; }
+
+@media print{
+
+  .no-print{ display: none !important; }
+
+  html, body{
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .lienzo{
+    display: block;
+    padding: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .envoltorio{
+    width: auto !important;
+    height: auto !important;
+  }
+
+  /* El escalado de ajuste a pantalla no debe llegar al papel. */
+  .hoja{
+    transform: none !important;
+    box-shadow: none !important;
+    margin: 0;
+  }
+
+  /* Sin affordances de edición en el papel. */
+  .hoja .solo-edicion{ display: none !important; }
+  .hoja [contenteditable]{ outline: none !important; background: none !important; }
+
+  /* Los fondos de color son el diseño, no decoración de pantalla. */
+  *{
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* --- Plantilla 1 · Ejecutivo vertical -----------------------------------
+     816 × 1056 px = 8.5 × 11 in exactos a 96 dpi: no hace falta escalar.
+     Fijar el tamaño de html y body evita que Chrome saque una segunda
+     página en blanco. */
+  html.imprimir-1, html.imprimir-1 body{
+    width: 816px;
+    height: 1056px;
+    overflow: hidden;
+  }
+  html.imprimir-1 .hoja{ width: 816px; height: 1056px; }
+
+  /* --- Plantilla 2 · Procedimiento horizontal -----------------------------
+     1400 × 1000 no cabe en A4 apaisada: se reduce al 72 %. Con transform hay
+     que fijar el tamaño de html y body al resultado escalado (1008 × 720) o
+     Chrome saca una segunda página en blanco. */
+  html.imprimir-2 .hoja{
+    width: 1400px;
+    height: 1000px;
+    transform: scale(.72) !important;
+    transform-origin: top left;
+  }
+  html.imprimir-2, html.imprimir-2 body{
+    width: 1008px;
+    height: 720px;
+    overflow: hidden;
+  }
+
+  /* --- Plantilla 3 · Editorial — 816 × 1056 = carta exacta ---------------- */
+  html.imprimir-3, html.imprimir-3 body{
+    width: 816px;
+    height: 1056px;
+    overflow: hidden;
+  }
+  html.imprimir-3 .hoja{ width: 816px; height: 1056px; }
+
+  /* --- Plantilla 4 · Tablero — 1400 × 640 al 75 % ------------------------- */
+  html.imprimir-4 .hoja{
+    width: 1400px;
+    height: 640px;
+    transform: scale(.75) !important;
+    transform-origin: top left;
+  }
+  html.imprimir-4, html.imprimir-4 body{
+    width: 1050px;
+    height: 480px;
+    overflow: hidden;
+  }
+}
