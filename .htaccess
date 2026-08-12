@@ -10,6 +10,9 @@
 #  los archivos de compilación.
 # ============================================================================
 
+# --- La portada es PHP ------------------------------------------------------
+DirectoryIndex index.php index.html
+
 # --- Nada de archivos ocultos ni de contraseñas ----------------------------
 <FilesMatch "^\.">
   Require all denied
@@ -22,7 +25,12 @@
 
 # --- Carpetas que no deben servirse ----------------------------------------
 RedirectMatch 404 ^/hosting(/.*)?$
-RedirectMatch 404 ^/boletin/dist(/.*)?$
+
+# La aplicacion servida por boletin.php y su codigo fuente NO se sirven
+# directamente: si se pudieran pedir por URL, la pantalla de acceso no
+# serviria de nada.
+RedirectMatch 404 ^/privado(/.*)?$
+RedirectMatch 404 ^/boletin(/.*)?$
 
 # --- Sin listados de directorio --------------------------------------------
 Options -Indexes

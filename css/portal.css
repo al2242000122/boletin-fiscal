@@ -247,6 +247,119 @@ body{
   color: #7A8A99;
 }
 
+/* ---- Pantalla de acceso -------------------------------------------------- */
+.acceso{
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+}
+.acceso-caja{
+  width: 100%;
+  max-width: 400px;
+  padding: 32px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(0,0,0,.32);
+}
+.marca-acceso{ margin-bottom: 26px; }
+.marca-acceso .marca-sigla{
+  border-color: var(--rule);
+  color: var(--navy);
+}
+.marca-acceso .marca-nombre b{ color: var(--navy); font-size: 14px; }
+.marca-acceso .marca-nombre span{ color: var(--mut); }
+
+.acceso-caja h1{
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--navy);
+}
+.acceso-nota{
+  margin: 8px 0 22px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--mut);
+}
+.acceso-nota code{
+  font-size: 12.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--soft);
+  color: var(--navy);
+}
+
+.acceso-caja label{
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+.acceso-caja input[type="text"],
+.acceso-caja input[type="password"]{
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 11px 13px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+}
+.acceso-caja input:focus{
+  outline: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(29,111,165,.16);
+}
+
+.btn-acceso{
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--acc);
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background .13s ease;
+}
+.btn-acceso:hover{ background: #17608F; }
+.btn-acceso:focus-visible{ outline: 2px solid var(--navy); outline-offset: 2px; }
+
+.acceso-error{
+  margin: 0 0 18px;
+  padding: 10px 13px;
+  border-radius: 7px;
+  border: 1px solid #E6B9BF;
+  background: #FBEEF0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #8C2733;
+}
+
+.acceso-hash{
+  width: 100%;
+  padding: 10px;
+  font-family: ui-monospace, Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--papel);
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  resize: vertical;
+}
+
 /* ---- Pie ----------------------------------------------------------------- */
 .pie{
   background: var(--navy);

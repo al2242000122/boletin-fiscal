@@ -68,6 +68,13 @@ if (!existsSync(join(RAIZ, 'dist'))) mkdirSync(join(RAIZ, 'dist'));
 writeFileSync(join(RAIZ, 'dist', 'boletin.html'), html, 'utf8');
 console.log('dist/boletin.html    ' + Math.round(html.length / 1024) + ' KB, un solo archivo');
 
+/* Copia que sirve boletin.php. Vive en privado/, fuera del alcance del
+   navegador: sin sesion no hay forma de pedirla por URL. */
+const PRIV = join(RAIZ, '..', 'privado');
+if (!existsSync(PRIV)) mkdirSync(PRIV);
+writeFileSync(join(PRIV, 'boletin.html'), html, 'utf8');
+console.log('privado/boletin.html ' + Math.round(html.length / 1024) + ' KB, para el acceso PHP');
+
 /* --- Comprobaciones mínimas ------------------------------------------------ */
 const fallos = [];
 if (/<link rel="stylesheet"/.test(html)) fallos.push('quedó un <link> de CSS sin incrustar');

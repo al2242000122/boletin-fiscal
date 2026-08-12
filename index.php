@@ -1,16 +1,75 @@
+<?php
+/* ============================================================================
+   index.php — pantalla de acceso y portal.
+   Sin sesión muestra el formulario; con sesión, las herramientas.
+   ============================================================================ */
+require __DIR__ . '/acceso.php';
+acceso_iniciar();
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!acceso_configurado()) {
+        $error = 'Falta configurar la contraseña. Suba _configurar.php y siga las instrucciones.';
+    } elseif (($falta = acceso_bloqueado()) > 0) {
+        $error = 'Demasiados intentos fallidos. Vuelva a intentarlo en '
+               . ceil($falta / 60) . ' minuto(s).';
+    } elseif (acceso_entrar($_POST['usuario'] ?? '', $_POST['clave'] ?? '', $_POST['token'] ?? '')) {
+        header('Location: index.php');   // redirige para que F5 no reenvíe el formulario
+        exit;
+    } else {
+        $error = 'Usuario o contraseña incorrectos.';
+    }
+}
+
+$dentro = acceso_activo();
+header('Cache-Control: private, no-store');
+?>
 <!doctype html>
 <html lang="es-MX">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>International Support Services, S.C. — Herramientas</title>
-<meta name="description" content="Herramientas internas de International Support Services, S.C.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="css/portal.css">
 </head>
 
 <body>
 
+<?php if (!$dentro): ?>
+<!-- ====================== PANTALLA DE ACCESO ====================== -->
+<main class="acceso">
+  <form class="acceso-caja" method="post" action="index.php" autocomplete="on">
+    <div class="marca marca-acceso">
+      <div class="marca-sigla" aria-hidden="true">ISS</div>
+      <div class="marca-nombre">
+        <b>International Support Services, S.C.</b>
+        <span>Contadores públicos</span>
+      </div>
+    </div>
+
+    <h1>Herramientas del despacho</h1>
+    <p class="acceso-nota">Acceso restringido al personal del despacho.</p>
+
+    <?php if ($error !== ''): ?>
+      <p class="acceso-error" role="alert"><?= esc($error) ?></p>
+    <?php endif; ?>
+
+    <label for="usuario">Usuario</label>
+    <input type="text" id="usuario" name="usuario" autocomplete="username"
+           required autofocus value="<?= esc($_POST['usuario'] ?? '') ?>">
+
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" name="clave" autocomplete="current-password" required>
+
+    <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+    <button type="submit" class="btn-acceso">Entrar</button>
+  </form>
+</main>
+
+<?php else: ?>
+<!-- ====================== PORTAL ====================== -->
 <header class="cabecera">
   <div class="contenedor">
     <div class="marca">
@@ -21,8 +80,7 @@
       </div>
     </div>
     <p class="cabecera-contacto">
-      <a href="mailto:jmdm@insuser.mx">jmdm@insuser.mx</a> ·
-      <a href="mailto:dff@insuser.mx">dff@insuser.mx</a>
+      <a href="salir.php">Cerrar sesión</a>
     </p>
   </div>
 </header>
@@ -47,12 +105,7 @@
     </p>
 
     <div class="rejilla">
-
-      <!-- ================================================================
-           Herramienta activa. Para agregar otra, copia este bloque entero,
-           cambia el href, el título, la descripción y el icono.
-           ================================================================ -->
-      <a class="tarjeta" href="boletin/">
+      <a class="tarjeta" href="boletin.php">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
@@ -68,24 +121,17 @@
         </p>
         <span class="tarjeta-pie">Abrir</span>
       </a>
-
     </div>
 
     <h2 class="seccion-titulo seccion-titulo-2">En desarrollo</h2>
-    <p class="seccion-nota">
-      Anunciadas aquí para tenerlas a la vista. Todavía no abren.
-    </p>
+    <p class="seccion-nota">Anunciadas aquí para tenerlas a la vista. Todavía no abren.</p>
 
     <div class="rejilla">
-
-      <!-- Para activar una: cambia el <div> por <a class="tarjeta" href="carpeta/">,
-           quita la <span class="insignia"> y pon <span class="tarjeta-pie">Abrir</span> -->
       <div class="tarjeta tarjeta-pendiente">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 5h10M4 9h7M4 13h5"/>
-            <circle cx="15.5" cy="14.5" r="4.2"/>
+            <path d="M4 5h10M4 9h7M4 13h5"/><circle cx="15.5" cy="14.5" r="4.2"/>
             <path d="m18.7 17.7 2.6 2.6"/>
           </svg>
         </div>
@@ -102,8 +148,7 @@
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 9h14l-3.5-3.5"/>
-            <path d="M20 15H6l3.5 3.5"/>
+            <path d="M4 9h14l-3.5-3.5"/><path d="M20 15H6l3.5 3.5"/>
           </svg>
         </div>
         <h2>API de tipo de cambio</h2>
@@ -130,7 +175,6 @@
         </p>
         <span class="insignia">En desarrollo</span>
       </div>
-
     </div>
   </div>
 </main>
@@ -138,12 +182,10 @@
 <footer class="pie">
   <div class="contenedor">
     <p><b>International Support Services, S.C.</b><br>Uso interno del despacho.</p>
-    <p>
-      <a href="mailto:jmdm@insuser.mx">jmdm@insuser.mx</a> ·
-      <a href="mailto:dff@insuser.mx">dff@insuser.mx</a>
-    </p>
+    <p><a href="salir.php">Cerrar sesión</a></p>
   </div>
 </footer>
+<?php endif; ?>
 
 </body>
 </html>
