@@ -38,7 +38,28 @@ AddCharset UTF-8 .html .css .js
   </FilesMatch>
 </IfModule>
 
-# --- Contraseña de acceso --------------------------------------------------
-#  Se activa desde hPanel → Archivos → Protección de directorios con
-#  contraseña, sobre public_html. hPanel escribe sus propias líneas; si las
-#  añade a este archivo, no borres las reglas de arriba.
+# ============================================================================
+#  CONTRASEÑA DE ACCESO
+#
+#  OJO: hPanel escribe estas líneas en el .htaccess DEL SERVIDOR, y como el
+#  despliegue sobrescribe este archivo con el del repositorio, la contraseña
+#  desaparecería en el siguiente despliegue sin avisar. Por eso tienen que
+#  vivir aquí, en el repositorio.
+#
+#  PASOS
+#  1. hPanel → Avanzado → Proteger directorios con contraseña.
+#     Elige public_html, pon usuario y contraseña, y guarda.
+#     Eso crea el archivo .htpasswd (fuera de public_html) con el hash.
+#  2. Abre public_html/.htaccess en el Administrador de archivos y copia la
+#     ruta exacta que hPanel puso en AuthUserFile.
+#  3. Descomenta las cuatro líneas de abajo, pega esa ruta, y sube el cambio
+#     al repositorio. Así la contraseña sobrevive a los despliegues.
+#
+#  El .htpasswd NUNCA va en el repositorio: contiene el hash de la contraseña
+#  y quedaría publicado en GitHub.
+# ============================================================================
+
+# AuthType Basic
+# AuthName "Herramientas del despacho"
+# AuthUserFile "/home/uXXXXXXXX/.htpasswds/public_html/passwd"
+# Require valid-user
