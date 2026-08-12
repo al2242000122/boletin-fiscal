@@ -62,11 +62,29 @@ var App = (function () {
       fotos[i].style.backgroundImage = 'url("' + estado.contenido.foto + '")';
     }
 
+    // Paso de ajuste propio de la plantilla, si lo tiene (la Editorial encoge
+    // el cuerpo hasta que cabe en sus dos columnas).
+    var factor = p.ajustar ? p.ajustar(hoja) : 1;
+
     Editor.aplicarModo(estado.editando);
     // El usuario también imprime con Ctrl+P, sin pasar por el botón: las reglas
     // de página tienen que estar puestas siempre, no solo al pulsar Imprimir.
     Exportar.reglaPagina(estado.plantilla);
     ajustar();
+    vigilarCapacidad(p, factor);
+  }
+
+  /* Una hoja de tamaño fijo puede quedarse corta si el texto crece. Antes que
+     recortar en silencio, se avisa. */
+  function vigilarCapacidad(p, factor) {
+    var rebasa = hoja.scrollWidth > p.ancho + 1 || hoja.scrollHeight > p.alto + 1;
+    if (rebasa) {
+      aviso('El texto ya no cabe en «' + p.nombre + '»: se está saliendo de la hoja. ' +
+            'Acorte algún punto o use otra plantilla.', 'error');
+    } else if (factor < 0.9) {
+      aviso('El texto es largo para «' + p.nombre + '»: se redujo al ' +
+            Math.round(factor * 100) + '% para que cupiera.', 'error');
+    }
   }
 
   /* ---- ajuste a pantalla -------------------------------------------------
@@ -276,7 +294,15 @@ var App = (function () {
       });
     });
 
+    // Descartar borra el único ejemplar de lo editado y no hay deshacer.
+    // Un clic accidental costaría el trabajo de todo un boletín, así que
+    // confirma y recuerda que Guardar existe.
     document.getElementById('btn-descartar').addEventListener('click', function () {
+      var seguro = window.confirm(
+        '¿Descartar todo lo editado y volver al texto original?\n\n' +
+        'Esto no se puede deshacer. Si quiere conservarlo, cancele y use ' +
+        'primero el botón Guardar.');
+      if (!seguro) return;
       Exportar.borrarBorrador();
       estado.contenido = Datos.clonar(CONTENIDO_INICIAL);
       estado.plantilla = '1';

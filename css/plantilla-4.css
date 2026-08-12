@@ -44,7 +44,7 @@
   overflow: hidden;
   background-color: var(--navy);
   background-size: cover;
-  background-position: center 30%;
+  background-position: center 46%;   /* mismo motivo que en la plantilla 1 */
   background-repeat: no-repeat;
 }
 .p4-velo{

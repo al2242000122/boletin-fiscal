@@ -432,13 +432,58 @@ var Plantillas = (function () {
   }
 
 
+  /* Autoajuste de la Editorial ------------------------------------------------
+     El cuerpo son dos columnas de altura fija. Si el texto crece (el boletín
+     cambia cada mes), sobra material y el navegador lo manda a una TERCERA
+     columna que cae fuera de la hoja: el texto desaparece sin avisar.
+
+     La §5 dice que si no cabe se ajusta la tipografía, no se recorta el texto.
+     Eso es exactamente lo que hace esto: baja el cuerpo de 2 en 2 % hasta que
+     las dos columnas lo absorben. Devuelve el factor aplicado para que la
+     aplicación pueda avisar si hubo que apretar demasiado.
+     -------------------------------------------------------------------------- */
+  function ajustarEditorial(hoja) {
+    var cuerpo = hoja.querySelector('.p3-cuerpo');
+    if (!cuerpo) return 1;
+    var f = 1;
+    cuerpo.style.setProperty('--p3-fs', '1');
+    // scrollWidth > clientWidth significa que se abrió una columna de más.
+    while (f > 0.78 && cuerpo.scrollWidth > cuerpo.clientWidth + 1) {
+      f = Math.round((f - 0.02) * 100) / 100;
+      cuerpo.style.setProperty('--p3-fs', String(f));
+    }
+    return f;
+  }
+
+  /* Autoajuste del Ejecutivo vertical ------------------------------------------
+     El cuerpo es una columna flex de altura fija con la banda de apoyo pegada
+     abajo. Si el texto crece, esa banda se monta sobre el pie. Mismo criterio
+     que en la Editorial: se aprieta la tipografía, nunca se recorta el texto.
+     -------------------------------------------------------------------------- */
+  function ajustarEjecutivo(hoja) {
+    var cuerpo = hoja.querySelector('.p1-cuerpo');
+    if (!cuerpo) return 1;
+    var f = 1;
+    cuerpo.style.setProperty('--p1-fs', '1');
+    function rebasa() {
+      var ultimo = cuerpo.lastElementChild;
+      if (!ultimo) return false;
+      return ultimo.getBoundingClientRect().bottom > cuerpo.getBoundingClientRect().bottom + 0.6;
+    }
+    while (f > 0.78 && rebasa()) {
+      f = Math.round((f - 0.02) * 100) / 100;
+      cuerpo.style.setProperty('--p1-fs', String(f));
+    }
+    return f;
+  }
+
   var REGISTRO = {
     '1': { nombre: 'Ejecutivo vertical',       ancho: 816,  alto: 1056, foto: true,
-           orientacion: 'vertical',   render: plantilla1 },
+           orientacion: 'vertical',   render: plantilla1, ajustar: ajustarEjecutivo },
     '2': { nombre: 'Procedimiento horizontal', ancho: 1400, alto: 1000, foto: false,
            orientacion: 'horizontal', render: plantilla2 },
     '3': { nombre: 'Editorial',                ancho: 816,  alto: 1056, foto: false,
-           orientacion: 'vertical',   render: plantilla3 },
+           orientacion: 'vertical',   render: plantilla3, ajustar: ajustarEditorial },
     '4': { nombre: 'Tablero',                  ancho: 1400, alto: 640,  foto: true,
            orientacion: 'banda',      render: plantilla4 }
   };

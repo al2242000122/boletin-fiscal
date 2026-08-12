@@ -108,14 +108,20 @@
   padding: 0 40px;
   background-color: var(--navy);
   background-size: cover;
-  background-position: center 32%;
+  /* La torre es la aguja central de una foto muy vertical. Con cover, en una
+     banda de 604x139 el encuadre por defecto caía en el cielo y la torre
+     desaparecía; al 46 % entra la aguja. */
+  background-position: center 46%;
   background-repeat: no-repeat;
 }
 .p1-velo{
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(90deg, rgba(var(--navy-rgb),.95), rgba(var(--navy-rgb),.78));
+  /* Velo aclarado para que la torre se vea. Medido sobre la foto real: el
+     texto blanco queda a 5.14:1 en su punto peor, por encima del 4.5:1 que
+     pide la AA. Con .82/.38 la torre luce más pero el contraste cae a 3.44:1. */
+  background: linear-gradient(90deg, rgba(var(--navy-rgb),.88), rgba(var(--navy-rgb),.55));
 }
 .p1-gancho{
   position: relative;
@@ -129,17 +135,18 @@
 
 /* ---- 3. Cuerpo ----------------------------------------------------------- */
 .p1-cuerpo{
+  --p1-fs: 1;                /* factor de autoajuste; lo fija Plantillas.ajustarEjecutivo */
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: calc(34px * var(--p1-fs, 1));
   padding: 22px 40px 0;
 }
 
 .p1-h3{
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: calc(14px * var(--p1-fs, 1));
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -151,7 +158,7 @@
 
 .p1-entrada{
   margin: 0 0 2px;
-  font-size: 12px;
+  font-size: calc(12px * var(--p1-fs, 1));
   font-style: italic;
   line-height: 1.5;
   color: var(--mut);
@@ -160,13 +167,13 @@
 
 .p1-p{
   margin: 0;
-  font-size: 13.2px;
+  font-size: calc(13.2px * var(--p1-fs, 1));
   line-height: 1.52;
   color: var(--ink);
 }
 
 .p1-lista .it{
-  font-size: 12.8px;
+  font-size: calc(12.8px * var(--p1-fs, 1));
   line-height: 1.46;
   color: var(--ink);
 }
@@ -222,7 +229,7 @@
   grid-template-rows: repeat(3, auto);
   grid-auto-flow: column;
   column-gap: 34px;
-  row-gap: 6px;
+  row-gap: calc(6px * var(--p1-fs, 1));
 }
 
 /* 3.c — Riesgos y preparación, lado a lado */
@@ -257,7 +264,7 @@
   margin: 0;
   flex: 1;
   min-width: 0;
-  font-size: 13.2px;
+  font-size: calc(13.2px * var(--p1-fs, 1));
   line-height: 1.44;
   color: var(--sobre-navy);
 }
@@ -285,7 +292,7 @@
 }
 .p1-apoyo-entrada{
   margin: 4px 0 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--p1-fs, 1));
   font-style: italic;
   line-height: 1.4;
   color: var(--mut);
@@ -297,7 +304,7 @@
   column-gap: 28px;
   row-gap: 4px;
 }
-.p1-apoyo .it{ padding-left: 13px; font-size: 12px; line-height: 1.45; }
+.p1-apoyo .it{ padding-left: 13px; font-size: calc(12px * var(--p1-fs, 1)); line-height: 1.45; }
 .p1 .p1-apoyo .it::before{
   content: "›";
   top: 0;

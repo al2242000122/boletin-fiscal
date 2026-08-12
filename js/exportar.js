@@ -92,11 +92,15 @@ var Exportar = (function () {
   /* @page no admite selectores: la regla de tamaño y orientación se inyecta
      según la plantilla activa justo antes de imprimir. La clase imprimir-N en
      <html> activa además las reglas con selector de print.css. */
+  /* margin:0 en las cuatro: el margen de página es donde el navegador dibuja
+     su encabezado y su pie (fecha, título, URL, número de página). Sin margen
+     no caben. Carta porque es el papel del despacho; las apaisadas están
+     dimensionadas para caber también en A4 apaisada. */
   var REGLAS_PAGINA = {
     '1': '@page{ size: letter; margin: 0; }',
-    '2': '@page{ size: A4 landscape; margin: 8mm; }',
+    '2': '@page{ size: letter landscape; margin: 0; }',
     '3': '@page{ size: letter; margin: 0; }',
-    '4': '@page{ size: A4 landscape; margin: 8mm; }'
+    '4': '@page{ size: letter landscape; margin: 0; }'
   };
 
   function reglaPagina(plantilla) {

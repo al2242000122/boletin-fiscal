@@ -107,6 +107,7 @@
 .p3-cuerpo{
   flex: 1;
   min-height: 0;
+  --p3-fs: 1;                /* factor de autoajuste; lo fija Plantillas.ajustarEditorial */
   padding: 22px 0 14px;
   column-count: 2;
   column-gap: 34px;
@@ -115,7 +116,7 @@
 }
 .p3-blk{
   break-inside: avoid;
-  margin: 0 0 9px;
+  margin: 0 0 calc(9px * var(--p3-fs, 1));
 }
 .p3-blk:last-child{ margin-bottom: 0; }
 
@@ -124,7 +125,7 @@
   padding-bottom: 3px;
   border-bottom: 1px solid var(--rule);
   font-family: var(--sans);
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--p3-fs, 1));
   font-weight: 700;
   letter-spacing: .1em;
   text-transform: uppercase;
@@ -136,7 +137,7 @@
 
 .p3-entrada{
   margin: 0 0 3px;
-  font-size: 11px;
+  font-size: calc(11px * var(--p3-fs, 1));
   font-style: italic;
   line-height: 1.45;
   color: var(--mut);
@@ -146,7 +147,7 @@
 .p3-p{
   margin: 0;
   font-family: var(--serif);
-  font-size: 12.7px;
+  font-size: calc(12.7px * var(--p3-fs, 1));
   line-height: 1.52;
   text-align: justify;
   hyphens: auto;
@@ -158,7 +159,7 @@
   padding-left: 18px;
   margin-bottom: 3px;
   font-family: var(--serif);
-  font-size: 12.4px;
+  font-size: calc(12.4px * var(--p3-fs, 1));
   line-height: 1.36;
   color: var(--ink);
 }
@@ -173,7 +174,7 @@
   left: 4px;
   top: 0;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: calc(13px * var(--p3-fs, 1));
   line-height: 1.35;
   color: var(--vineta, var(--acc));
 }
@@ -189,7 +190,7 @@
   content: counter(paso) ".";
   left: 0;
   font-family: var(--serif);
-  font-size: 12.4px;
+  font-size: calc(12.4px * var(--p3-fs, 1));
   line-height: 1.36;
   color: var(--mut);
 }
@@ -206,7 +207,7 @@
 }
 .p3-consejo .p3-p{
   font-style: italic;
-  font-size: 12.4px;
+  font-size: calc(12.4px * var(--p3-fs, 1));
   line-height: 1.46;
   text-align: left;          /* §10.7 — cursiva justificada = ríos */
   hyphens: none;

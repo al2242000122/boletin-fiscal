@@ -1,0 +1,39 @@
+# ============================================================================
+#  .htaccess — protección con contraseña del generador de boletines
+#  Hostinger (LiteSpeed, compatible con .htaccess)
+#
+#  CÓMO USARLO
+#  1. Renombra este archivo a  .htaccess  (con el punto delante, sin .txt).
+#  2. Súbelo a  public_html/  (junto a index.html).
+#  3. Cambia la línea AuthUserFile por la ruta real de TU cuenta.
+#     La ves en hPanel → Archivos → Administrador de archivos: arriba aparece
+#     algo como  /home/u123456789/
+#
+#  IMPORTANTE: el archivo .htpasswd va FUERA de public_html. Si lo dejas
+#  dentro, cualquiera puede descargarlo y sacar el hash de la contraseña.
+#
+#  La forma más simple de crearlo es dejar que hPanel lo haga por ti:
+#  hPanel → Archivos → Protección de directorios con contraseña. Esa
+#  herramienta genera el .htpasswd y el .htaccess correctos sola, y entonces
+#  este archivo no hace falta. Úsalo solo si prefieres hacerlo a mano.
+# ============================================================================
+
+AuthType Basic
+AuthName "Boletin fiscal - International Support Services"
+AuthUserFile "/home/uXXXXXXXX/.htpasswds/boletin/.htpasswd"
+Require valid-user
+
+# --- Nunca servir los archivos de contraseñas ni los ocultos ----------------
+<FilesMatch "^\.(htaccess|htpasswd|env|git)">
+  Require all denied
+</FilesMatch>
+
+# --- Acentos correctos en el HTML y el JS servidos ------------------------
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .css .js .json
+
+# --- El navegador no debe cachear el contenido del boletín ----------------
+#     Así el despacho ve los cambios en cuanto vuelves a subir la carpeta.
+<FilesMatch "\.(html|js|css)$">
+  Header set Cache-Control "no-cache, must-revalidate"
+</FilesMatch>

@@ -58,12 +58,17 @@
 
   <p class="nota" id="nota-png" hidden>Sin conexión: la exportación a PNG no está
     disponible. Use Imprimir / PDF.</p>
-  <div class="restaurado" id="restaurado" hidden>
-    <span>Se restauró el borrador guardado.</span>
-    <button type="button" id="btn-descartar" class="btn btn-mini">Descartar</button>
-  </div>
   <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
 </header>
+
+<!-- Franja propia, fuera de la barra: es un aviso, no un control, y dentro de
+     la barra apretaba los botones y quedaba descolocado. -->
+<div class="restaurado no-print" id="restaurado" hidden>
+  <span class="restaurado-tx">Se recuperó lo que estaba editando la última vez.</span>
+  <button type="button" id="btn-descartar" class="btn btn-mini btn-peligro">
+    Descartar y volver al texto original
+  </button>
+</div>
 
 <main class="lienzo" id="lienzo">
   <div class="envoltorio" id="envoltorio">

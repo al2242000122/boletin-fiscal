@@ -3,11 +3,17 @@
    ATENCIÓN: los textos son transcripción del documento del cliente.
    No parafrasear, no "mejorar", no agregar ni quitar secciones.
    Todo lo que se ve en pantalla sale de aquí; editar en pantalla escribe aquí.
+
+   Versión de agosto de 2026, con las correcciones del contador (tarjetas 01 a
+   06 del procedimiento, sexto riesgo, redacción de "¿Qué es el artículo 49
+   Bis?", rótulo "Recomendación práctica" y lista de apoyo reducida a tres).
+   Transcrito literal del PDF "Boletin II". Las observaciones de ortografía y
+   de plazos quedaron anotadas aparte, sin tocar el texto.
    ========================================================================== */
 
 var CONTENIDO_INICIAL = {
   meta: {
-    kicker: "Boletín fiscal · Agosto 2026",
+    kicker: "Boletín fiscal · Ejercicio 2026",
     mes: "Agosto 2026",
     articulo: "Artículo 49 Bis",
     ordenamiento: "del Código Fiscal de la Federación",
@@ -22,7 +28,7 @@ var CONTENIDO_INICIAL = {
       id: "quees",
       titulo: "¿Qué es el artículo 49 Bis?",
       tipo: "parrafo",
-      texto: "El artículo 49 Bis del Código Fiscal de la Federación establece un procedimiento de visita domiciliaria que puede iniciar y concluir en 24 días hábiles, que permite al SAT verificar a aquellos contribuyentes respecto de los cuales existan indicios de que emiten CFDI que amparan operaciones inexistentes, simuladas o sin sustancia económica."
+      texto: "El artículo 49 Bis del Código Fiscal de la Federación establece un procedimiento de visita domiciliaria que puede iniciar y concluir en 24 días hábiles, que permite al SAT revisar que las operaciones amparadas por los CFDI emitidos por el contribuyente cuenten con sustancia económica, conforme a lo previsto en el artículo 29-A, fracción IX del mismo Código."
     },
     {
       id: "puede",
@@ -30,11 +36,12 @@ var CONTENIDO_INICIAL = {
       tipo: "lista",
       entrada: "Durante este procedimiento la autoridad podrá:",
       items: [
+        "Notificar a través de Buzón Tributario acto administrativo.",
         "Realizar visitas en el domicilio fiscal, sucursales o establecimientos.",
-        "Revisar la existencia material del negocio.",
-        "Verificar infraestructura, activos, personal y capacidad operativa.",
-        "Solicitar contratos, registros contables, estados de cuenta y demás documentación que acredite la realidad de las operaciones.",
-        "Suspender temporalmente la emisión de CFDI durante el procedimiento, cuando así lo establezca la orden de visita."
+        "Revisar la sustancia económica de las operaciones amparadas por los CFDI emitidos, con base en la documentación que el contribuyente ponga a disposición de la autoridad.",
+        "Plazos para aclarar observaciones y recibir respuesta: 5 días hábiles para el contribuyente 3 días hábiles para el SAT",
+        "Si se desvirtúa: Se restablece el CSD",
+        "Consecuencias de no desvirtuar: Contribuyente: Suspensión de CSD con posible responsabilidad penal Terceros: 30 días hábiles para revertir efectos fiscales"
       ]
     },
     {
@@ -48,7 +55,8 @@ var CONTENIDO_INICIAL = {
         "Interrupción de la operación comercial.",
         "Observaciones fiscales que deriven en créditos fiscales.",
         "Riesgos para clientes y proveedores relacionados con las operaciones observadas.",
-        "Posibles responsabilidades administrativas o penales en los casos previstos por la ley."
+        "Posibles responsabilidades administrativas o penales en los casos previstos por la ley.",
+        "A partir de la publicación 30 días naturales para revertir efectos fiscales"
       ]
     },
     {
@@ -67,7 +75,7 @@ var CONTENIDO_INICIAL = {
     },
     {
       id: "consejo",
-      titulo: "Nuestro consejo",
+      titulo: "Recomendación práctica",
       tipo: "parrafo",
       destacado: true,
       texto: "La mejor defensa frente a una auditoría exprés no se construye durante la visita. Se construye antes, con expedientes de materialidad ordenados, procesos documentales sólidos y una relación de confianza con un equipo fiscal que conozca a fondo la operación del negocio."
@@ -78,7 +86,6 @@ var CONTENIDO_INICIAL = {
       tipo: "lista",
       entrada: "Nuestro equipo puede ayudarle a:",
       items: [
-        "Revisar el cumplimiento de sus obligaciones fiscales.",
         "Evaluar la materialidad de sus operaciones.",
         "Preparar expedientes de soporte documental.",
         "Brindar acompañamiento durante actos de fiscalización del SAT."

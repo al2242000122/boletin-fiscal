@@ -1,0 +1,278 @@
+/* ==========================================================================
+   portal.css — portada de insusermx.com
+
+   Paleta heredada del boletín para que se vea de la misma casa. No depende de
+   css/tokens.css del generador: el portal vive en la raíz del sitio y el
+   generador en /boletin/, así que lleva sus propios tokens.
+
+   A diferencia de las hojas del boletín, que son de tamaño fijo, esta página
+   SÍ es responsiva: es una web, no un documento para imprimir.
+   ========================================================================== */
+
+:root{
+  --navy:   #0A2540;
+  --navy-2: #123A63;
+  --acc:    #1D6FA5;
+  --soft:   #E4EDF5;
+  --ink:    #17232F;
+  --mut:    #5D6E7E;
+  --rule:   #DCE4EC;
+  --papel:  #F7F9FB;
+  --sans: "Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif: Georgia,"Times New Roman",serif;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+html{ -webkit-text-size-adjust: 100%; }
+
+body{
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--papel);
+  -webkit-font-smoothing: antialiased;
+}
+
+.contenedor{
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---- Cabecera ------------------------------------------------------------ */
+.cabecera{
+  background: var(--navy);
+  color: #fff;
+  padding: 18px 0;
+}
+.cabecera .contenedor{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.marca{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.marca-sigla{
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 4px;
+  font-family: var(--serif);
+  font-size: 15px;
+  letter-spacing: .06em;
+  color: #fff;
+}
+.marca-nombre{ min-width: 0; }
+.marca-nombre b{
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+.marca-nombre span{
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: #A9C4DA;
+}
+.cabecera-contacto{
+  font-size: 12.5px;
+  color: #C6D9E8;
+  white-space: nowrap;
+}
+.cabecera-contacto a{ color: inherit; text-decoration: none; }
+.cabecera-contacto a:hover{ color: #fff; text-decoration: underline; }
+
+/* ---- Portada ------------------------------------------------------------- */
+.portada{
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+  color: #fff;
+  padding: 52px 0 60px;
+}
+.portada h1{
+  margin: 0;
+  font-size: clamp(28px, 4.4vw, 40px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.015em;
+  max-width: 20ch;
+}
+.portada p{
+  margin: 16px 0 0;
+  font-size: clamp(14.5px, 1.8vw, 16.5px);
+  line-height: 1.6;
+  color: #C6D9E8;
+  max-width: 62ch;
+}
+.portada-regla{
+  width: 64px;
+  height: 3px;
+  margin: 0 0 22px;
+  background: var(--acc);
+  border-radius: 2px;
+}
+
+/* ---- Rejilla de herramientas --------------------------------------------- */
+.seccion{ padding: 44px 0 56px; flex: 1; }
+
+.seccion-titulo{
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--acc);
+}
+.seccion-titulo-2{ margin-top: 44px; }
+.seccion-nota{
+  margin: 0 0 26px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--mut);
+  max-width: 62ch;
+}
+
+.rejilla{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  gap: 18px;
+}
+
+/* --- Tarjeta activa: es un enlace completo -------------------------------- */
+.tarjeta{
+  display: flex;
+  flex-direction: column;
+  min-height: 188px;
+  padding: 22px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 1px 2px rgba(10,37,64,.05);
+  transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.tarjeta:hover{
+  border-color: var(--acc);
+  box-shadow: 0 8px 22px rgba(10,37,64,.13);
+  transform: translateY(-2px);
+}
+.tarjeta:focus-visible{
+  outline: 2px solid var(--acc);
+  outline-offset: 3px;
+}
+
+.tarjeta-icono{
+  width: 38px;
+  height: 38px;
+  margin-bottom: 14px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--acc);
+}
+.tarjeta-icono svg{ width: 20px; height: 20px; display: block; }
+
+.tarjeta h2{
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--navy);
+}
+.tarjeta p{
+  margin: 7px 0 0;
+  font-size: 13.3px;
+  line-height: 1.55;
+  color: var(--mut);
+}
+.tarjeta-pie{
+  margin-top: auto;
+  padding-top: 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--acc);
+}
+.tarjeta-pie::after{ content: " →"; }
+
+/* --- Herramienta anunciada pero todavía sin construir ----------------------
+   Misma caja que la activa, en tono apagado y SIN enlace: si fuera <a> daría
+   404 al hacer clic. Para activarla, cambia el <div> por
+   <a class="tarjeta" href="carpeta/">, quita la insignia y pon el pie "Abrir". */
+.tarjeta-pendiente{
+  border-style: dashed;
+  border-color: #C3D0DC;
+  background: transparent;
+  box-shadow: none;
+  cursor: default;
+}
+.tarjeta-pendiente:hover{
+  border-color: #C3D0DC;
+  box-shadow: none;
+  transform: none;
+}
+.tarjeta-pendiente .tarjeta-icono{
+  background: #E8EDF2;
+  color: #8FA0B0;
+}
+.tarjeta-pendiente h2{ color: #5A6C7D; }
+
+.insignia{
+  align-self: flex-start;
+  margin-top: auto;
+  padding: 3px 9px;
+  border: 1px solid #C3D0DC;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #7A8A99;
+}
+
+/* ---- Pie ----------------------------------------------------------------- */
+.pie{
+  background: var(--navy);
+  color: #C6D9E8;
+  padding: 26px 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.pie .contenedor{
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pie b{ color: #fff; font-weight: 600; }
+.pie a{ color: inherit; text-decoration: none; }
+.pie a:hover{ color: #fff; text-decoration: underline; }
+
+@media (max-width: 560px){
+  .portada{ padding: 38px 0 44px; }
+  .seccion{ padding: 32px 0 44px; }
+  .cabecera-contacto{ white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .tarjeta{ transition: none; }
+  .tarjeta:hover{ transform: none; }
+}
