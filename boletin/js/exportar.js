@@ -130,9 +130,19 @@ var Exportar = (function () {
   var CLAVE_BORRADOR = 'boletin:borrador';
   var VERSION = 1;
 
+  function revisionActual() {
+    return (typeof CONTENIDO_REVISION === 'string') ? CONTENIDO_REVISION : null;
+  }
+
   function instantanea() {
     var e = ctx.estado();
-    return { version: VERSION, plantilla: e.plantilla, tema: e.tema, contenido: e.contenido };
+    return {
+      version: VERSION,
+      revision: revisionActual(),   // contra qué texto base se editó esto
+      plantilla: e.plantilla,
+      tema: e.tema,
+      contenido: e.contenido
+    };
   }
 
   function guardarJSON() {
@@ -251,6 +261,16 @@ var Exportar = (function () {
     reglaPagina: reglaPagina,
     png: png,
     imprimir: imprimir,
+    revisionActual: revisionActual,
+    /* Vuelve a sellar el borrador con la revisión de hoy, para que el aviso de
+       "el texto base cambió" no reaparezca si el usuario decide conservarlo. */
+    sellarBorrador: function () {
+      var b = leerBorrador();
+      if (!b) return false;
+      b.revision = revisionActual();
+      try { localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(b)); return true; }
+      catch (e) { return false; }
+    },
     guardarJSON: guardarJSON,
     cargarJSON: cargarJSON,
     guardarHTML: guardarHTML,

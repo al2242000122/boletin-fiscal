@@ -121,6 +121,14 @@ body{
 .restaurado[hidden]{ display: none; }
 .restaurado-tx{ flex: 1 1 auto; }
 
+/* El texto base cambió y el usuario sigue viendo su borrador: se marca más
+   fuerte porque es una discrepancia, no un simple "se recuperó tu trabajo". */
+.restaurado-caduco{
+  color: #FFD9A8;
+  background: #3A2A16;
+  border-bottom-color: #6B4E24;
+}
+
 .btn-peligro{
   border-color: #7A4A50;
   background: #3A2028;

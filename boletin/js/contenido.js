@@ -11,6 +11,17 @@
    de plazos quedaron anotadas aparte, sin tocar el texto.
    ========================================================================== */
 
+/* Marca de revisión del texto base. SÚBELA cada vez que cambies el contenido
+   de este archivo (por ejemplo a "2026-09-r1" el mes que entra).
+
+   Sirve para un problema real: el borrador que la aplicación guarda en el
+   navegador se restaura al abrir y tapa el texto de aquí. Si alguien editó
+   en agosto y luego se publica una corrección, al abrir seguiría viendo su
+   borrador viejo y parecería que la corrección no se subió. Con esta marca,
+   la aplicación detecta que el texto base cambió y lo avisa en pantalla en
+   vez de callárselo. */
+var CONTENIDO_REVISION = "2026-08-r2";
+
 var CONTENIDO_INICIAL = {
   meta: {
     kicker: "Boletín fiscal · Ejercicio 2026",

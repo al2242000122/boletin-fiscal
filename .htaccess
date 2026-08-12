@@ -1,0 +1,44 @@
+# ============================================================================
+#  .htaccess — raíz de insusermx.com
+#
+#  Hostinger publica este repositorio TAL CUAL como public_html: lo que esté
+#  aquí se sirve por web. Este archivo saca del aire lo que es material de
+#  desarrollo y no parte del sitio.
+#
+#  Comprobado el 12/08/2026: sin estas reglas se descargaban en abierto el
+#  documento Word original del cliente (1.4 MB), la especificación técnica y
+#  los archivos de compilación.
+# ============================================================================
+
+# --- Nada de archivos ocultos ni de contraseñas ----------------------------
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+
+# --- Material de desarrollo, no del sitio ----------------------------------
+<FilesMatch "\.(md|docx|doc|mjs|json|log|bak|zip)$">
+  Require all denied
+</FilesMatch>
+
+# --- Carpetas que no deben servirse ----------------------------------------
+RedirectMatch 404 ^/hosting(/.*)?$
+RedirectMatch 404 ^/boletin/dist(/.*)?$
+
+# --- Sin listados de directorio --------------------------------------------
+Options -Indexes
+
+# --- Acentos correctos ------------------------------------------------------
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .css .js
+
+# --- Que el navegador no sirva versiones viejas tras cada despliegue --------
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# --- Contraseña de acceso --------------------------------------------------
+#  Se activa desde hPanel → Archivos → Protección de directorios con
+#  contraseña, sobre public_html. hPanel escribe sus propias líneas; si las
+#  añade a este archivo, no borres las reglas de arriba.

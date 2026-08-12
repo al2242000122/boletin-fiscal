@@ -2,34 +2,44 @@
 
 ## Cómo queda el sitio
 
-El portal va en la raíz y cada herramienta en su propia carpeta. Así se
-ramifica sin tocar lo ya publicado:
+**Hostinger publica este repositorio tal cual como `public_html`.** Es decir:
+la forma del repositorio ES la forma del sitio. No hay que mover nada a mano
+—si se moviera, el siguiente despliegue lo desharía—. Por eso el repositorio
+está organizado así:
 
 ```
-public_html/
-├── index.html          ← el portal   (contenido de portal/)
-├── css/portal.css      ←             (contenido de portal/)
-└── boletin/            ← el generador
-    ├── index.html
-    ├── css/  js/  assets/
+/  (= public_html)
+├── index.html          ← el portal
+├── css/portal.css      ← estilos del portal
+├── .htaccess           ← bloquea lo que no es sitio
+├── boletin/            ← el generador
+│   ├── index.html
+│   ├── css/  js/  assets/
+│   ├── build.mjs  dist/
+├── hosting/            ← estas notas (no se sirven)
+└── ESPECIFICACION-…md, …docx  (no se sirven)
 ```
 
-Para subirlo por FTP o por el Administrador de archivos de hPanel:
+Con eso, `insusermx.com` abre el portal y `insusermx.com/boletin/` el
+generador. Comprobado: el enlace resuelve y el generador pasa su batería
+completa desde la subcarpeta, porque todas sus rutas son relativas.
 
-1. Crea la carpeta **`boletin`** dentro de `public_html`.
-2. Mueve ahí `index.html`, `css/`, `js/` y `assets/` del generador.
-3. Sube el **contenido** de la carpeta `portal/` a la raíz de `public_html`
-   (queda `index.html` y `css/portal.css`).
+**La siguiente herramienta va en su propia carpeta** en la raíz —
+`/tipo-de-cambio/`, `/articulo-69/`, etc. — y se le añade una tarjeta al
+portal copiando el bloque `<a class="tarjeta">` comentado en `index.html`.
 
-Comprobado: con esa estructura el enlace del portal resuelve y el generador
-sigue funcionando igual desde la subcarpeta, porque todas sus rutas son
-relativas.
+### Lo que el .htaccess saca del aire
 
-Cuando agregues la siguiente función, va en su propia carpeta —
-`public_html/loquesea/` — y se le añade una tarjeta al portal copiando el
-bloque `<a class="tarjeta">` que está comentado en `portal/index.html`.
+Sin él se descargaban en abierto, por ser parte del repositorio:
 
-No hace falta subir `hosting/`, `build.mjs` ni `dist/`.
+- el documento Word original del cliente (1.4 MB),
+- la especificación técnica del proyecto,
+- `build.mjs` y la carpeta `dist/`.
+
+El archivo bloquea `.md`, `.docx`, `.mjs`, `.json`, los archivos ocultos, la
+carpeta `hosting/` y `boletin/dist/`, y apaga el listado de directorios.
+Si activas la protección por contraseña desde hPanel y escribe sus líneas en
+este mismo archivo, **no borres las reglas que ya están**.
 
 ---
 

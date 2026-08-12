@@ -255,11 +255,27 @@ var App = (function () {
     construirGaleria();
     construirTemas();
 
-    // Borrador de la sesión anterior, si lo hay y si localStorage funciona.
+    /* Borrador de la sesión anterior, si lo hay y si localStorage funciona.
+
+       Ojo con el caso que costó una tarde: el borrador tapa el texto base. Si
+       se publica una corrección del boletín y el usuario tenía un borrador
+       viejo, al abrir vería su versión anterior y concluiría que la
+       corrección nunca se subió. Por eso se compara la revisión: el borrador
+       se sigue respetando —no se tira el trabajo de nadie— pero se avisa. */
     var borrador = Exportar.leerBorrador();
     if (borrador) {
       aplicarInstantanea(borrador);
-      document.getElementById('restaurado').hidden = false;
+      var caduco = borrador.revision !== Exportar.revisionActual();
+      var franja = document.getElementById('restaurado');
+      franja.hidden = false;
+      franja.classList.toggle('restaurado-caduco', caduco);
+      document.getElementById('restaurado-tx').textContent = caduco
+        ? 'El texto base del boletín se actualizó, pero está viendo su borrador anterior.'
+        : 'Se recuperó lo que estaba editando la última vez.';
+      document.getElementById('btn-conservar').hidden = !caduco;
+      document.getElementById('btn-descartar').textContent = caduco
+        ? 'Cargar el texto actualizado'
+        : 'Descartar y volver al texto original';
     } else {
       pintar();
       marcarGaleria();
@@ -310,6 +326,14 @@ var App = (function () {
       pintar(); marcarGaleria(); marcarTemas();
       document.getElementById('restaurado').hidden = true;
       aviso('Borrador descartado; se recuperó el contenido original.', 'ok');
+    });
+
+    // "Seguir con mi borrador": conserva lo editado y sella el borrador con la
+    // revisión de hoy para que el aviso no vuelva a salir en cada apertura.
+    document.getElementById('btn-conservar').addEventListener('click', function () {
+      Exportar.sellarBorrador();
+      document.getElementById('restaurado').hidden = true;
+      aviso('Se conserva su borrador. El texto actualizado sigue disponible con «Descartar».', 'ok');
     });
 
     window.addEventListener('resize', ajustar);
