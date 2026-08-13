@@ -12,3 +12,11 @@ const BD_NOMBRE = 'u000000000_ejemplo';
 const BD_USUARIO= 'u000000000_ejemplo';
 const BD_CLAVE  = 'PONER-AQUI-LA-CONTRASENA';
 const BD_CHARSET= 'utf8mb4';
+
+/* A quién avisar cuando el SAT publique un movimiento urgente: un RFC que
+   entra como presunto o que pasa a definitivo. Varias direcciones separadas
+   por coma. Vacío = no se manda ningún correo. */
+const AVISO_CORREO   = '';
+/* Remitente. Tiene que ser una dirección del propio dominio: si se pone un
+   gmail, el correo sale marcado como falsificado y acaba en spam. */
+const AVISO_REMITENTE = 'alertas@insusermx.com';

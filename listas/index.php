@@ -13,7 +13,7 @@ acceso_exigir();
 /* --- estado ------------------------------------------------------------- */
 $hayConfig = is_file(__DIR__ . '/../privado/config.php');
 $conecta = false; $errorBD = ''; $tablas = []; $resumen = null; $ingestas = [];
-$cronUltima = null; $alertas = 0;
+$cronUltima = null; $alertas = 0; $hayArt69 = false;
 
 if ($hayConfig) {
     try {
@@ -37,6 +37,11 @@ if ($hayConfig) {
             $alertas = (int)bd()->query("SELECT COUNT(*) FROM eventos e
                                          JOIN snapshots s ON s.id = e.snapshot_id
                                          WHERE s.linea_base = 0")->fetchColumn();
+            // Las listas del artículo 69 pesan 20 MB: solo puede haberlas
+            // traído el cron. Que estén cargadas es prueba de que corrió.
+            $hayArt69 = (bool)bd()->query("SELECT COUNT(*) FROM ingestas
+                                           WHERE lista LIKE 'art69.%' AND ultimo_exito IS NOT NULL")
+                                  ->fetchColumn();
         }
     } catch (Throwable $e) { $errorBD = $e->getMessage(); }
 }
@@ -65,6 +70,13 @@ if ($accion && hash_equals($_SESSION['token'] ?? '', $_POST['token'] ?? '')) {
         if ($accion === 'crear' && $hayConfig) {
             $n = bd_ejecutar_sql(__DIR__ . '/cron/esquema.sql');
             echo "Listo: $n sentencias ejecutadas. Las tablas ya existen.\n";
+        } elseif ($accion === 'probar_correo') {
+            require_once __DIR__ . '/cron/lib/aviso.php';
+            $p = aviso_probar();
+            echo ($p['ok'] ? "Correo de prueba enviado: " : "No se pudo enviar: ") . $p['motivo'] . "\n";
+            if ($p['ok']) {
+                echo "\nSi no llega en unos minutos, revisa la carpeta de correo no deseado.\n";
+            }
         } elseif ($accion === 'actualizar' && $hayTablas) {
             // Solo 69-B desde la web: entra en el tiempo que da el servidor.
             // Las listas grandes del Art. 69 las trae el cron, sin ese límite.
@@ -300,14 +312,66 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       <p class="seccion-nota" style="margin-top:12px">
         Esa ruta es la de tu servidor, ya resuelta: cópiala tal cual. Si hPanel
         pide la ruta de PHP por separado, usa <code>php</code> y deja lo demás.
-        Este apartado se quita solo cuando la tarea corra por primera vez.
       </p>
+      <div class="aviso" style="margin-top:14px">
+        <?php if ($hayArt69): ?>
+          <b>La tarea ya corrió alguna vez.</b>
+          Se nota porque las listas del artículo 69 están cargadas y esas solo
+          las puede traer el cron. Lo que falta es la constancia con fecha, que
+          se empezó a registrar ahora: aparecerá en la próxima corrida y
+          entonces este apartado se quita solo.
+        <?php else: ?>
+          <b>Todavía no hay constancia de que la tarea haya corrido.</b>
+          Ojo: la constancia se registra desde esta versión, así que si ya la
+          diste de alta, esto es normal y se resolverá en la próxima corrida.
+          Si mañana sigue igual, la tarea no está funcionando: revísala en
+          hPanel y comprueba que la ruta coincide con la de arriba.
+        <?php endif; ?>
+      </div>
     <?php elseif ($listo && $cronUltima): ?>
       <p class="seccion-nota" style="margin-top:22px">
         La tarea automática está corriendo: última vez el
         <b><?= esc(substr((string)$cronUltima, 0, 16)) ?></b>.
         El comando, por si hay que volver a darlo de alta, está en los detalles técnicos.
       </p>
+    <?php endif; ?>
+
+    <?php if ($listo):
+      require_once __DIR__ . '/cron/lib/aviso.php';
+      $correos = aviso_destinatarios();
+      $pendientes = (int)bd()->query("SELECT COUNT(*) FROM eventos e
+                                      JOIN snapshots s ON s.id = e.snapshot_id
+                                      WHERE e.prioridad = 2 AND s.linea_base = 0
+                                        AND e.avisado_en IS NULL")->fetchColumn(); ?>
+      <h2 class="seccion-titulo seccion-titulo-2">Aviso por correo</h2>
+      <?php if ($correos): ?>
+        <p class="seccion-nota">
+          Cuando el SAT publique un RFC nuevo como presunto, o alguno pase a
+          definitivo, sale un correo a <b><?= esc(implode(', ', $correos)) ?></b>.
+          Solo lo urgente, una vez por movimiento, nunca la carga inicial.
+          <?php if ($pendientes): ?>
+            Hay <b><?= $pendientes ?></b> sin avisar todavía; salen en la próxima corrida.
+          <?php endif; ?>
+        </p>
+        <form method="post">
+          <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+          <input type="hidden" name="accion" value="probar_correo">
+          <button class="btn-accion">Enviar un correo de prueba</button>
+        </form>
+      <?php else: ?>
+        <p class="seccion-nota">
+          Sin configurar: hoy hay que entrar a mirar las alertas. Para recibirlas,
+          abre <code>privado/config.php</code> en el Administrador de archivos y
+          añade al final estas dos líneas, con tu dirección:
+        </p>
+        <code class="comando">const AVISO_CORREO    = 'tucorreo@insusermx.com';
+const AVISO_REMITENTE = 'alertas@insusermx.com';</code>
+        <p class="seccion-nota" style="margin-top:12px">
+          El remitente tiene que ser una dirección del propio dominio; si pones
+          un Gmail, el correo sale marcado como falsificado y acaba en spam.
+          Después vuelve aquí y manda una prueba.
+        </p>
+      <?php endif; ?>
     <?php endif; ?>
 
     <details class="avanzado">
@@ -321,6 +385,12 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
             <td class="tenue">/usr/bin/php <?= esc($rutaCron) ?></td></tr>
         <tr><td>Última corrida automática</td>
             <td class="tenue"><?= $cronUltima ? esc($cronUltima) : 'todavía ninguna' ?></td></tr>
+        <tr><td>Aviso por correo</td>
+            <td class="tenue"><?= $listo && !empty($correos)
+                 ? esc(implode(', ', $correos)) . ' · desde ' . esc(aviso_remitente())
+                 : 'sin configurar' ?></td></tr>
+        <tr><td>Zona horaria</td><td class="tenue"><?= esc(date_default_timezone_get()) ?>
+            · ahora son las <?= esc(date('H:i')) ?></td></tr>
       </table>
     </details>
 

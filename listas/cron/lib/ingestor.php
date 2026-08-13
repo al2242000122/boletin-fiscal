@@ -9,6 +9,7 @@
 
 require_once __DIR__ . '/bd.php';
 require_once __DIR__ . '/migracion.php';
+require_once __DIR__ . '/aviso.php';
 require_once __DIR__ . '/fuentes.php';
 require_once __DIR__ . '/csv_sat.php';
 
@@ -47,7 +48,20 @@ function ingestar(array $filtro = [], bool $forzar = false, ?callable $log = nul
             registrar_error($clave, $e->getMessage());
         }
     }
-    return ['ok' => $errores === 0, 'motivo' => '', 'eventos' => $eventos, 'errores' => $errores];
+
+    /* Aviso al final, una vez, con todo junto: si el SAT publica varias listas
+       el mismo día no tiene sentido mandar un correo por cada una. Un fallo
+       aquí no puede tumbar la ingesta: el dato ya está cargado. */
+    $avisados = 0;
+    try {
+        $a = avisar_pendientes($log);
+        $avisados = $a['eventos'];
+    } catch (Throwable $e) {
+        $log('   aviso por correo: ' . $e->getMessage());
+    }
+
+    return ['ok' => $errores === 0, 'motivo' => '', 'eventos' => $eventos,
+            'errores' => $errores, 'avisados' => $avisados];
 }
 
 /* ==========================================================================

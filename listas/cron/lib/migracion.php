@@ -44,5 +44,15 @@ function migrar_columnas_pendientes(): array
         }
     }
 
+    if (bd_asegurar_columna('eventos', 'avisado_en', 'DATETIME NULL DEFAULT NULL')) {
+        $hizo[] = 'columna eventos.avisado_en';
+
+        /* Lo ya cargado no se avisa: son movimientos que el despacho ya conoce
+           y un correo con miles de líneas al desplegar no ayuda a nadie. Se
+           dan por avisados; los que lleguen a partir de ahora, no. */
+        $sellados = bd()->exec("UPDATE eventos SET avisado_en = NOW() WHERE avisado_en IS NULL");
+        $hizo[] = sprintf('%s evento(s) anteriores se dan por avisados', number_format((int)$sellados));
+    }
+
     return $hecho = $hizo;
 }

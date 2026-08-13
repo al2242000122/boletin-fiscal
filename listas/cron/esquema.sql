@@ -98,6 +98,9 @@ CREATE TABLE IF NOT EXISTS eventos (
   -- 1 = relevante · 0 = informativo
   prioridad          TINYINT         NOT NULL DEFAULT 0,
   detectado_en       DATETIME        NOT NULL,
+  -- Cuándo se avisó por correo. NULL = pendiente. Evita repetir el aviso y,
+  -- si el envío falla, deja que el siguiente intento lo recoja.
+  avisado_en         DATETIME        NULL DEFAULT NULL,
   snapshot_id        BIGINT UNSIGNED NOT NULL,
   PRIMARY KEY (id),
   KEY ix_detectado (detectado_en),
