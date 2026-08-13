@@ -2,16 +2,18 @@
 /* ============================================================================
    probar_parser.php — comprueba el parser contra los archivos reales.
 
-   Uso:  php cron/probar_parser.php <carpeta-con-los-csv>
+   Uso:  php listas/cron/probar_parser.php <carpeta-con-los-csv>
 
    No inventa fixtures: corre sobre lo que publica el SAT y contrasta los
-   resultados con lo que quedó medido en docs/ESQUEMAS.md. Si el SAT cambia
+   resultados con lo que quedó medido en listas/docs/ESQUEMAS.md. Si el SAT cambia
    algo, esto lo delata en vez de que se descubra en producción.
    ============================================================================ */
 
 require __DIR__ . '/lib/csv_sat.php';
 
-$dir = $argv[1] ?? __DIR__ . '/../privado/listas/raw';
+/* Los CSV crudos se archivan en la raíz del sitio, no dentro de la
+   herramienta: privado/ está bloqueado por el .htaccess y lo comparten todas. */
+$dir = $argv[1] ?? __DIR__ . '/../../privado/listas/raw';
 if (!is_dir($dir)) { fwrite(STDERR, "No existe la carpeta: $dir\n"); exit(2); }
 
 /* archivo => [familia, lo que esperamos según ESQUEMAS.md] */

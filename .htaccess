@@ -25,8 +25,12 @@ DirectoryIndex index.php index.html
 
 # --- Carpetas que no deben servirse ----------------------------------------
 RedirectMatch 404 ^/hosting(/.*)?$
-RedirectMatch 404 ^/cron(/.*)?$
-RedirectMatch 404 ^/docs(/.*)?$
+
+# Herramienta de listas del SAT. Hoy no tiene interfaz web: solo scripts de
+# cron y documentación, así que se bloquea entera. Cuando tenga pantalla de
+# consulta se abrirá listas/index.php y quedarán bloqueados listas/cron y
+# listas/lib.
+RedirectMatch 404 ^/listas(/.*)?$
 
 # La aplicacion servida por boletin.php y su codigo fuente NO se sirven
 # directamente: si se pudieran pedir por URL, la pantalla de acceso no

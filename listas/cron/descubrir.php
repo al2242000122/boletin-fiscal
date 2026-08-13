@@ -2,9 +2,9 @@
 /* ============================================================================
    descubrir.php — comprueba dónde están hoy los archivos del SAT.
 
-   Uso:   php cron/descubrir.php            informe legible
-          php cron/descubrir.php --json     salida para máquinas
-          php cron/descubrir.php --sin-red  no consulta tamaños (más rápido)
+   Uso:   php listas/cron/descubrir.php            informe legible
+          php listas/cron/descubrir.php --json     salida para máquinas
+          php listas/cron/descubrir.php --sin-red  no consulta tamaños (más rápido)
 
    Es la primera pieza del ingestor y también sirve de alarma: si el SAT vuelve
    a mover los archivos, esto lo dice en vez de dejar que el sistema sirva

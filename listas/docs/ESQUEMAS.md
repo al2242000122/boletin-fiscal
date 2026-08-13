@@ -2,7 +2,7 @@
 
 Verificado el **12 de agosto de 2026** descargando los archivos, no leyendo
 documentación. Todo lo que sigue está medido. Si algo cambia, este documento
-deja de ser cierto: vuelve a correr `php cron/descubrir.php`.
+deja de ser cierto: vuelve a correr `php listas/cron/descubrir.php`.
 
 ---
 
@@ -305,8 +305,8 @@ documentado como fase futura, sin implementar.
 ## 9. Cómo volver a comprobar todo esto
 
 ```
-php cron/descubrir.php            informe legible
-php cron/descubrir.php --json     salida para máquinas
+php listas/cron/descubrir.php            informe legible
+php listas/cron/descubrir.php --json     salida para máquinas
 ```
 
 Avisa si una lista del catálogo desaparece del índice, si un nombre de archivo
