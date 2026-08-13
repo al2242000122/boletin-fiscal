@@ -126,8 +126,8 @@ function url(array $c = []): string {
       <div class="marca-nombre"><b>Alertas</b><span>Movimientos en los listados</span></div>
     </div>
     <p class="cabecera-contacto">
-      <a href="consulta.php">Consultar RFC</a> · <a href="index.php">Administración</a> ·
-      <a href="../index.php">Portal</a>
+      <a href="consulta.php">Consultar RFC</a> · <a href="lote.php">Por lote</a> ·
+      <a href="index.php">Administración</a> · <a href="../index.php">Portal</a>
     </p>
   </div>
 </header>

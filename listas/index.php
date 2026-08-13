@@ -157,8 +157,8 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       </div>
     </div>
     <p class="cabecera-contacto">
-      <a href="alertas.php">Alertas</a> · <a href="consulta.php">Consultar RFC</a> ·
-      <a href="../index.php">Portal</a>
+      <a href="consulta.php">Consultar RFC</a> · <a href="lote.php">Por lote</a> ·
+      <a href="alertas.php">Alertas</a> · <a href="../index.php">Portal</a>
     </p>
   </div>
 </header>
