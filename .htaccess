@@ -25,6 +25,8 @@ DirectoryIndex index.php index.html
 
 # --- Carpetas que no deben servirse ----------------------------------------
 RedirectMatch 404 ^/hosting(/.*)?$
+RedirectMatch 404 ^/cron(/.*)?$
+RedirectMatch 404 ^/docs(/.*)?$
 
 # La aplicacion servida por boletin.php y su codigo fuente NO se sirven
 # directamente: si se pudieran pedir por URL, la pantalla de acceso no
