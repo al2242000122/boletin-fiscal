@@ -109,7 +109,7 @@ $paso = !$hayConfig ? 1 : (!$conecta ? 1 : (!$hayTablas ? 2 : 3));
         <span>Artículo 69 · 69-B · 69-B Bis</span>
       </div>
     </div>
-    <p class="cabecera-contacto"><a href="../index.php">Volver al portal</a></p>
+    <p class="cabecera-contacto"><a href="consulta.php">Consultar RFC</a> · <a href="../index.php">Portal</a></p>
   </div>
 </header>
 
@@ -119,6 +119,18 @@ $paso = !$hayConfig ? 1 : (!$conecta ? 1 : (!$hayTablas ? 2 : 3));
     <?php if ($errorBD): ?>
       <div class="alerta"><b>No se pudo conectar a la base de datos.</b><br>
         <?= esc($errorBD) ?></div>
+    <?php endif; ?>
+
+    <?php if (!empty($GLOBALS['bd_config_sucia'])): ?>
+      <div class="alerta">
+        <b>El archivo <code>privado/config.php</code> tiene texto fuera de las etiquetas PHP.</b><br>
+        Funciona, pero conviene limpiarlo: cualquier carácter antes de
+        <code>&lt;?php</code> se imprime en la página y puede romper los enlaces
+        internos. Ábrelo en el Administrador de archivos y asegúrate de que los
+        primeros cinco caracteres del archivo sean exactamente
+        <code>&lt;?php</code>, sin nada delante.<br><br>
+        Se está imprimiendo esto: <em><?= esc($GLOBALS['bd_config_sucia']) ?>…</em>
+      </div>
     <?php endif; ?>
 
     <h2 class="seccion-titulo">Puesta en marcha</h2>

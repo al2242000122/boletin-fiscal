@@ -26,7 +26,16 @@ function bd_config(): array
             "Falta privado/config.php. Copie privado/config.php.ejemplo y ponga ahí " .
             "los datos de la base. NO edite el .ejemplo: ese sí va al repositorio.");
     }
+    /* El archivo de configuración lo escribe una persona a mano en el servidor.
+       Si se le cuela un espacio o un comentario ANTES de <?php, PHP lo imprime
+       y esa salida se cuela en la página: rompe los redirects con "headers
+       already sent" y ensucia el diseño. Se captura y se descarta. */
+    ob_start();
     require_once $ruta;
+    $basura = ob_get_clean();
+    if (trim($basura) !== '') {
+        $GLOBALS['bd_config_sucia'] = mb_substr(trim($basura), 0, 200);
+    }
 
     return [
         'host'    => defined('BD_HOST')    ? BD_HOST    : 'localhost',

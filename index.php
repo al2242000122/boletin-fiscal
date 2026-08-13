@@ -122,7 +122,7 @@ header('Cache-Control: private, no-store');
         <span class="tarjeta-pie">Abrir</span>
       </a>
 
-      <a class="tarjeta" href="listas/">
+      <a class="tarjeta" href="listas/consulta.php">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
