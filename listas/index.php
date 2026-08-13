@@ -1,10 +1,10 @@
 <?php
 /* ============================================================================
-   listas/index.php — panel de la herramienta de listas del SAT.
+   listas/index.php — administración de la herramienta de listas del SAT.
 
-   Existe para que la puesta en marcha no exija consola: desde aquí se crean
-   las tablas y se lanza la primera actualización con un botón. El
-   mantenimiento posterior lo hace el cron.
+   Mientras falte algo de la puesta en marcha, guía paso a paso. Una vez
+   resuelta, esos pasos desaparecen y la página queda como tablero de estado:
+   qué hay cargado, cuándo se actualizó y si el cron está corriendo.
    ============================================================================ */
 
 require __DIR__ . '/../acceso.php';
@@ -30,6 +30,19 @@ if ($hayConfig) {
     } catch (Throwable $e) { $errorBD = $e->getMessage(); }
 }
 $hayTablas = in_array('estatus', $tablas, true);
+$hayDatos  = !empty($resumen);
+$listo     = $hayConfig && $conecta && $hayTablas && $hayDatos;
+
+/* ¿corre el cron? Se mira cuánto hace del último intento con éxito. */
+$ultimoExito = null;
+foreach ($ingestas as $i) {
+    if ($i['ultimo_exito'] && (!$ultimoExito || $i['ultimo_exito'] > $ultimoExito)) $ultimoExito = $i['ultimo_exito'];
+}
+$diasSinCorrer = $ultimoExito ? floor((time() - strtotime($ultimoExito)) / 86400) : null;
+$conErrores = array_filter($ingestas, fn($i) => !empty($i['ultimo_error']));
+
+/* Ruta absoluta real para la línea del cron: así no hay que adivinarla. */
+$rutaCron = str_replace('\\', '/', realpath(__DIR__ . '/cron/ingesta.php'));
 
 /* --- acciones ------------------------------------------------------------ */
 $salida = ''; $accion = $_POST['accion'] ?? '';
@@ -42,9 +55,8 @@ if ($accion && hash_equals($_SESSION['token'] ?? '', $_POST['token'] ?? '')) {
             $n = bd_ejecutar_sql(__DIR__ . '/cron/esquema.sql');
             echo "Listo: $n sentencias ejecutadas. Las tablas ya existen.\n";
         } elseif ($accion === 'actualizar' && $hayTablas) {
-            // Solo 69-B desde la web: es lo que interesa y entra en el tiempo
-            // que da el servidor. Las listas grandes del Art. 69 las trae el
-            // cron, que no tiene ese límite.
+            // Solo 69-B desde la web: entra en el tiempo que da el servidor.
+            // Las listas grandes del Art. 69 las trae el cron, sin ese límite.
             require_once __DIR__ . '/cron/lib/ingestor.php';
             $r = ingestar(['grupo' => 'art69b'], false, function ($l) { echo "$l\n"; });
             echo "\n" . ($r['errores'] ? "Terminado con {$r['errores']} fallo(s). "
@@ -53,22 +65,18 @@ if ($accion && hash_equals($_SESSION['token'] ?? '', $_POST['token'] ?? '')) {
     } catch (Throwable $e) {
         echo "\nFALLO: " . $e->getMessage() . "\n";
     }
-    $salida = ob_get_clean();
-    // Volver a leer el estado después de actuar
-    header('Location: index.php?hecho=1');
-    $_SESSION['salida_listas'] = $salida;
+    $_SESSION['salida_listas'] = ob_get_clean();
+    header('Location: index.php');
     exit;
 }
 if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; unset($_SESSION['salida_listas']); }
-
-$paso = !$hayConfig ? 1 : (!$conecta ? 1 : (!$hayTablas ? 2 : 3));
 ?>
 <!doctype html>
 <html lang="es-MX">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Listas del SAT — International Support Services, S.C.</title>
+<title>Administración · Listas del SAT</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="../css/portal.css">
 <style>
@@ -82,20 +90,36 @@ $paso = !$hayConfig ? 1 : (!$conecta ? 1 : (!$hayTablas ? 2 : 3));
   .paso.toca .paso-num{ background:var(--acc); color:#fff; }
   .paso h2{ margin:0 0 6px; font-size:16px; color:var(--navy); }
   .paso p{ margin:0 0 10px; font-size:13.5px; line-height:1.6; color:var(--mut); }
-  .paso code{ background:var(--soft); padding:2px 6px; border-radius:4px;
-              font-size:12.5px; color:var(--navy); }
+  code{ background:var(--soft); padding:2px 6px; border-radius:4px;
+        font-size:12.5px; color:var(--navy); }
   .btn-accion{ font:inherit; font-size:14px; font-weight:600; color:#fff; background:var(--acc);
                border:0; border-radius:7px; padding:10px 18px; cursor:pointer; }
   .btn-accion:hover{ background:#17608F; }
   .btn-accion[disabled]{ background:#B9C6D3; cursor:not-allowed; }
   pre.salida{ background:#0E1116; color:#D6DEE8; padding:16px; border-radius:8px;
               font-size:12.5px; line-height:1.55; overflow-x:auto; white-space:pre-wrap; }
-  table.datos{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.datos{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff;
+               border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
   table.datos th{ text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-                  color:var(--mut); padding:8px 10px; border-bottom:1px solid var(--rule); }
-  table.datos td{ padding:8px 10px; border-bottom:1px solid var(--rule); }
+                  color:var(--mut); padding:10px 12px; background:#F7F9FB;
+                  border-bottom:1px solid var(--rule); }
+  table.datos td{ padding:10px 12px; border-bottom:1px solid var(--rule); }
+  table.datos tr:last-child td{ border-bottom:0; }
   .alerta{ padding:12px 14px; border-radius:8px; background:#FBEEF0; border:1px solid #E6B9BF;
            color:#8C2733; font-size:13.5px; line-height:1.55; margin-bottom:14px; }
+  .aviso{ padding:12px 14px; border-radius:8px; background:#FDF6E3; border:1px solid #E8D9A8;
+          color:#7A5D00; font-size:13.5px; line-height:1.55; margin-bottom:14px; }
+  .estado{ display:flex; gap:20px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+           padding:18px 22px; background:#F2F8F4; border:1px solid #BBDDC7;
+           border-radius:10px; margin-bottom:22px; }
+  .estado b{ color:var(--navy); font-size:15px; }
+  .estado .tenue{ color:var(--mut); font-size:13px; }
+  details.avanzado{ margin-top:26px; }
+  details.avanzado summary{ cursor:pointer; font-size:13px; color:var(--mut); }
+  details.avanzado summary:hover{ color:var(--acc); }
+  .comando{ display:block; margin-top:10px; padding:12px 14px; background:#0E1116; color:#D6DEE8;
+            border-radius:8px; font-family:ui-monospace,Consolas,monospace; font-size:12.5px;
+            overflow-x:auto; white-space:pre; }
 </style>
 </head>
 <body>
@@ -106,10 +130,12 @@ $paso = !$hayConfig ? 1 : (!$conecta ? 1 : (!$hayTablas ? 2 : 3));
       <div class="marca-sigla" aria-hidden="true">ISS</div>
       <div class="marca-nombre">
         <b>Listas del SAT</b>
-        <span>Artículo 69 · 69-B · 69-B Bis</span>
+        <span>Administración</span>
       </div>
     </div>
-    <p class="cabecera-contacto"><a href="consulta.php">Consultar RFC</a> · <a href="../index.php">Portal</a></p>
+    <p class="cabecera-contacto">
+      <a href="consulta.php">Consultar RFC</a> · <a href="../index.php">Portal</a>
+    </p>
   </div>
 </header>
 
@@ -117,113 +143,158 @@ $paso = !$hayConfig ? 1 : (!$conecta ? 1 : (!$hayTablas ? 2 : 3));
   <div class="contenedor">
 
     <?php if ($errorBD): ?>
-      <div class="alerta"><b>No se pudo conectar a la base de datos.</b><br>
-        <?= esc($errorBD) ?></div>
+      <div class="alerta"><b>No se pudo conectar a la base de datos.</b><br><?= esc($errorBD) ?></div>
     <?php endif; ?>
 
     <?php if (!empty($GLOBALS['bd_config_sucia'])): ?>
-      <div class="alerta">
+      <div class="aviso">
         <b>El archivo <code>privado/config.php</code> tiene texto fuera de las etiquetas PHP.</b><br>
-        Funciona, pero conviene limpiarlo: cualquier carácter antes de
-        <code>&lt;?php</code> se imprime en la página y puede romper los enlaces
-        internos. Ábrelo en el Administrador de archivos y asegúrate de que los
-        primeros cinco caracteres del archivo sean exactamente
-        <code>&lt;?php</code>, sin nada delante.<br><br>
-        Se está imprimiendo esto: <em><?= esc($GLOBALS['bd_config_sucia']) ?>…</em>
+        Funciona, pero conviene limpiarlo: los primeros cinco caracteres del
+        archivo deben ser exactamente <code>&lt;?php</code>, sin nada delante.
+        Ahora mismo se intenta imprimir: <em><?= esc($GLOBALS['bd_config_sucia']) ?>…</em>
       </div>
     <?php endif; ?>
 
-    <h2 class="seccion-titulo">Puesta en marcha</h2>
-    <p class="seccion-nota">Tres pasos, una sola vez. Después esto se actualiza solo.</p>
-
-    <!-- PASO 1 -->
-    <div class="paso <?= $hayConfig && $conecta ? 'hecho' : 'toca' ?>">
-      <div class="paso-num"><?= $hayConfig && $conecta ? '✓' : '1' ?></div>
-      <div>
-        <h2>Datos de la base de datos</h2>
-        <?php if ($hayConfig && $conecta): ?>
-          <p>Configurado y conectando correctamente.</p>
-        <?php else: ?>
-          <p>Falta el archivo <code>privado/config.php</code> en el servidor, o los
-             datos que tiene no son correctos. Este archivo no viaja con el código
-             a propósito: lleva la contraseña de la base.</p>
-          <p>En el Administrador de archivos de hPanel, entra a
-             <code>public_html/privado/</code>, copia
-             <code>config.php.ejemplo</code>, renombra la copia a
-             <code>config.php</code> y pon dentro los datos de tu base.</p>
-        <?php endif; ?>
+    <?php if ($conErrores): ?>
+      <div class="alerta"><b>Alguna lista falló en la última actualización.</b><br>
+        <?php foreach ($conErrores as $e): ?>
+          <?= esc($e['lista']) ?>: <?= esc($e['ultimo_error']) ?><br>
+        <?php endforeach; ?>
       </div>
-    </div>
+    <?php endif; ?>
 
-    <!-- PASO 2 -->
-    <div class="paso <?= $hayTablas ? 'hecho' : ($paso === 2 ? 'toca' : '') ?>">
-      <div class="paso-num"><?= $hayTablas ? '✓' : '2' ?></div>
-      <div>
-        <h2>Crear las tablas</h2>
-        <?php if ($hayTablas): ?>
-          <p>Hechas: <?= count($tablas) ?> tablas (<?= esc(implode(', ', $tablas)) ?>).</p>
-        <?php else: ?>
-          <p>Se crean solas con este botón. Se puede pulsar varias veces sin
-             romper nada: si ya existen, no las toca.</p>
-          <form method="post">
-            <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
-            <input type="hidden" name="accion" value="crear">
-            <button class="btn-accion" <?= $conecta ? '' : 'disabled' ?>>Crear las tablas</button>
-          </form>
-        <?php endif; ?>
-      </div>
-    </div>
+    <?php if ($diasSinCorrer !== null && $diasSinCorrer >= 3): ?>
+      <div class="aviso"><b>Llevan <?= (int)$diasSinCorrer ?> días sin actualizarse.</b>
+        Si ya configuraste la tarea automática, revisa que siga activa en hPanel.</div>
+    <?php endif; ?>
 
-    <!-- PASO 3 -->
-    <div class="paso <?= $resumen ? 'hecho' : ($paso === 3 ? 'toca' : '') ?>">
-      <div class="paso-num"><?= $resumen ? '✓' : '3' ?></div>
-      <div>
-        <h2>Traer las listas del SAT</h2>
-        <p>Descarga los listados del artículo 69-B y los carga. Tarda alrededor
-           de un minuto. Si el archivo no cambió desde la última vez, no hace
-           nada: no se duplica.</p>
-        <form method="post">
+
+    <?php if ($listo): ?>
+      <!-- ============ TODO LISTO: tablero, sin pasos ============ -->
+      <div class="estado">
+        <div>
+          <b>La herramienta está funcionando.</b>
+          <div class="tenue">Última actualización:
+            <?= $ultimoExito ? esc($ultimoExito) : 'sin registro' ?></div>
+        </div>
+        <form method="post" style="margin:0">
           <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
           <input type="hidden" name="accion" value="actualizar">
-          <button class="btn-accion" <?= $hayTablas ? '' : 'disabled' ?>>Actualizar ahora</button>
+          <button class="btn-accion">Actualizar ahora</button>
         </form>
       </div>
-    </div>
+
+    <?php else: ?>
+      <!-- ============ FALTA ALGO: guía paso a paso ============ -->
+      <h2 class="seccion-titulo">Puesta en marcha</h2>
+      <p class="seccion-nota">Tres pasos, una sola vez. Cuando estén los tres,
+        esta guía desaparece y queda solo el tablero.</p>
+
+      <div class="paso <?= $hayConfig && $conecta ? 'hecho' : 'toca' ?>">
+        <div class="paso-num"><?= $hayConfig && $conecta ? '✓' : '1' ?></div>
+        <div>
+          <h2>Datos de la base de datos</h2>
+          <?php if ($hayConfig && $conecta): ?>
+            <p>Configurado y conectando correctamente.</p>
+          <?php else: ?>
+            <p>Falta <code>privado/config.php</code> en el servidor, o sus datos
+               no son correctos. Este archivo no viaja con el código a propósito:
+               lleva la contraseña de la base.</p>
+            <p>En hPanel → Administrador de archivos, entra a
+               <code>public_html/privado/</code>, copia
+               <code>config.php.ejemplo</code>, renombra la copia a
+               <code>config.php</code> y pon dentro tus datos.</p>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="paso <?= $hayTablas ? 'hecho' : ($conecta ? 'toca' : '') ?>">
+        <div class="paso-num"><?= $hayTablas ? '✓' : '2' ?></div>
+        <div>
+          <h2>Crear las tablas</h2>
+          <?php if ($hayTablas): ?>
+            <p>Hechas: <?= count($tablas) ?> tablas.</p>
+          <?php else: ?>
+            <p>Se crean con este botón. Se puede pulsar varias veces sin romper
+               nada: si ya existen, no las toca.</p>
+            <form method="post">
+              <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+              <input type="hidden" name="accion" value="crear">
+              <button class="btn-accion" <?= $conecta ? '' : 'disabled' ?>>Crear las tablas</button>
+            </form>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <div class="paso <?= $hayDatos ? 'hecho' : ($hayTablas ? 'toca' : '') ?>">
+        <div class="paso-num"><?= $hayDatos ? '✓' : '3' ?></div>
+        <div>
+          <h2>Traer las listas del SAT</h2>
+          <p>Descarga los listados del artículo 69-B y los carga. Tarda alrededor
+             de un minuto. Si el archivo no cambió, no hace nada: no se duplica.</p>
+          <form method="post">
+            <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+            <input type="hidden" name="accion" value="actualizar">
+            <button class="btn-accion" <?= $hayTablas ? '' : 'disabled' ?>>Actualizar ahora</button>
+          </form>
+        </div>
+      </div>
+    <?php endif; ?>
+
 
     <?php if ($salida): ?>
-      <h2 class="seccion-titulo seccion-titulo-2">Resultado</h2>
+      <h2 class="seccion-titulo seccion-titulo-2">Resultado de la última acción</h2>
       <pre class="salida"><?= esc(trim($salida)) ?></pre>
     <?php endif; ?>
 
     <?php if ($resumen): ?>
       <h2 class="seccion-titulo seccion-titulo-2">Qué hay cargado</h2>
       <table class="datos">
-        <tr><th>Lista</th><th>Registros</th><th>Presuntos</th><th>Personas morales</th></tr>
+        <tr><th>Lista</th><th>Registros</th><th>Presuntos</th><th>Personas morales</th>
+            <th>Última actualización</th></tr>
+        <?php $porLista = []; foreach ($ingestas as $i) $porLista[$i['lista']] = $i; ?>
         <?php foreach ($resumen as $r): ?>
           <tr>
             <td><?= esc($r['lista']) ?></td>
             <td><?= number_format((int)$r['total']) ?></td>
             <td><?= number_format((int)$r['presuntos']) ?></td>
             <td><?= number_format((int)$r['morales']) ?></td>
+            <td class="tenue"><?= esc($porLista[$r['lista']]['ultimo_exito'] ?? '—') ?></td>
           </tr>
         <?php endforeach; ?>
       </table>
-
-      <?php if ($ingestas): ?>
-        <h2 class="seccion-titulo seccion-titulo-2">Última actualización</h2>
-        <table class="datos">
-          <tr><th>Lista</th><th>Último éxito</th><th>Último cambio</th><th>Error</th></tr>
-          <?php foreach ($ingestas as $i): ?>
-            <tr>
-              <td><?= esc($i['lista']) ?></td>
-              <td><?= esc($i['ultimo_exito'] ?? '—') ?></td>
-              <td><?= esc($i['ultimo_cambio'] ?? '—') ?></td>
-              <td><?= esc($i['ultimo_error'] ?? '') ?></td>
-            </tr>
-          <?php endforeach; ?>
-        </table>
-      <?php endif; ?>
     <?php endif; ?>
+
+
+    <?php if ($listo): ?>
+      <h2 class="seccion-titulo seccion-titulo-2">Actualización automática</h2>
+      <p class="seccion-nota">
+        El botón de arriba solo trae el artículo 69-B. Las listas del artículo 69
+        —Firmes, No localizados, Cancelados— pesan 20 MB cada una y no caben en
+        el tiempo que el servidor da a una página web. Para esas hace falta una
+        tarea programada, que además mantiene todo al día sin que nadie entre.
+      </p>
+      <p class="seccion-nota">
+        En hPanel → <b>Avanzado → Trabajos cron</b>, crea una tarea que corra
+        <b>una vez al día</b> con este comando:
+      </p>
+      <code class="comando">/usr/bin/php <?= esc($rutaCron) ?></code>
+      <p class="seccion-nota" style="margin-top:12px">
+        Esa ruta es la de tu servidor, ya resuelta: cópiala tal cual. Si hPanel
+        pide la ruta de PHP por separado, usa <code>php</code> y deja lo demás.
+      </p>
+    <?php endif; ?>
+
+    <details class="avanzado">
+      <summary>Ver detalles técnicos</summary>
+      <table class="datos" style="margin-top:12px">
+        <tr><th>Comprobación</th><th>Estado</th></tr>
+        <tr><td>privado/config.php</td><td><?= $hayConfig ? 'presente' : 'falta' ?></td></tr>
+        <tr><td>Conexión a MySQL</td><td><?= $conecta ? 'correcta' : 'sin conexión' ?></td></tr>
+        <tr><td>Tablas</td><td><?= $tablas ? esc(implode(', ', $tablas)) : 'ninguna' ?></td></tr>
+        <tr><td>Script del cron</td><td class="tenue"><?= esc($rutaCron) ?></td></tr>
+      </table>
+    </details>
 
   </div>
 </main>
