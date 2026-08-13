@@ -1,0 +1,7 @@
+# Credenciales reales: NUNCA al repositorio (es público).
+privado/config.php
+
+# Descargas y trabajo local del ingestor
+privado/listas/
+data/
+*.tmp

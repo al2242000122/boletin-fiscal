@@ -200,17 +200,23 @@ completo usa `No` sin punto. El parser tiene que tolerar ambas.
 
 ### Valores reales de `Situación del contribuyente`
 
-Sobre las 14 536 filas del listado completo:
+Sobre las **14 523** filas del listado completo, leídas con `fgetcsv`:
 
 | valor | filas |
 |---|---|
-| Definitivo | 11 770 |
+| Definitivo | 11 771 |
 | Sentencia Favorable | 1 658 |
-| **Presunto** | **753** |
+| **Presunto** | **754** |
 | Desvirtuado | 340 |
-| *(vacío)* | 15 |
 
-No inventar otros. Son estos cinco casos, incluido el vacío.
+No inventar otros. Son estos cuatro valores, y no hay filas con la situación
+vacía.
+
+> **Corrección del 12/08/2026.** Un primer conteo hecho leyendo el archivo
+> línea a línea daba 14 536 filas, 753 presuntos y 15 situaciones vacías. Era
+> incorrecto: contaba como filas las líneas de relleno (`,,,,,`) y partía en dos
+> los registros que llevan un salto de línea dentro de un campo. Los números
+> buenos son los de arriba, medidos con un lector de CSV de verdad.
 
 ### Artículo 69-B Bis — 12 columnas, 2 líneas de preámbulo
 
@@ -230,17 +236,26 @@ Número y fecha de oficio global de sentencia favorable DOF, Publicación DOF se
 
 Hay que manejarla desde el primer día, no descubrirla en producción.
 
-**RFC inválidos** en el listado completo de 69-B (14 536 filas):
+**Clasificación de RFC** en el listado completo de 69-B (14 523 filas):
 
-| longitud | filas | qué es |
-|---|---|---|
-| 12 | 11 230 | persona moral |
-| 13 | 3 293 | persona física |
-| 0 | 11 | **vacío** |
-| 6 | 1 | truncado |
-| 16 | 1 | con basura |
+| resultado | filas |
+|---|---|
+| moral (12 caracteres) | 11 139 |
+| física (13 caracteres) | 3 293 |
+| **suprimido** | **91** |
 
-En `Presuntos.csv` (756 filas): uno vacío y uno de 16 caracteres.
+En `Presuntos.csv` (754 filas): 15 suprimidos.
+
+**Registros tachados por el propio SAT.** 91 filas traen el RFC como
+`XXXXXXXXXXXX` y el nombre como *"Información suprimida en cumplimiento de la
+Ley Federal de Protección de Datos Personales"*. No son basura ni errores de
+captura: son filas reales con el dato retirado a propósito. Hay que
+conservarlas marcadas como suprimidas, no descartarlas.
+
+**RFC con Ñ.** Hay 98 en el listado. La `Ñ` ocupa **dos bytes** en UTF-8, así
+que contar con `strlen` da 13 o 14 caracteres y los descarta por longitud
+inválida. Hay que usar `mb_strlen`. Ejemplos reales: `ÑAÑ140114GY4`,
+`ÑEX121116KM4`.
 
 **Campos vacíos donde no deberían:** en la muestra de `Firmes.csv`, una fila
 sin `SUPUESTO` y sin `TIPO PERSONA`.
@@ -270,8 +285,8 @@ cual y, si hace falta, extraer la fecha aparte.
 
 ## 7. Volumen para dimensionar
 
-- 69-B completo: **14 536 filas**
-- 69-B presuntos: **756 filas**
+- 69-B completo: **14 523 filas**
+- 69-B presuntos: **754 filas**
 - Firmes: 20 MB ≈ 250 000 filas estimadas
 - Cancelados: 20.6 MB, orden similar
 

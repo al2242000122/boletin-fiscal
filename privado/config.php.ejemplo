@@ -1,0 +1,14 @@
+<?php
+/* ============================================================================
+   config.php — credenciales. Copiar a privado/config.php y rellenar.
+
+   privado/config.php NO va al repositorio (.gitignore) y además está fuera del
+   alcance del navegador (.htaccess bloquea /privado). El repositorio es
+   público: una credencial aquí queda expuesta a cualquiera.
+   ============================================================================ */
+
+const BD_HOST   = 'localhost';
+const BD_NOMBRE = 'u000000000_ejemplo';
+const BD_USUARIO= 'u000000000_ejemplo';
+const BD_CLAVE  = 'PONER-AQUI-LA-CONTRASENA';
+const BD_CHARSET= 'utf8mb4';
