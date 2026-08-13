@@ -1,0 +1,8 @@
+# Estos CSV son bytes exactos a propósito: windows-1252 y CRLF, igual que los
+# que publica el SAT. Sin esta línea git normaliza los finales de línea al
+# guardarlos, y en un clon fuera de Windows el archivo saldría con LF: el caso
+# dejaría de reproducir el archivo real, que es justo para lo que existe.
+#
+# Comprobado el 13/08/2026: sin esto, lo guardado en el repositorio no coincide
+# byte a byte con lo que hay en disco.
+*.csv -text
