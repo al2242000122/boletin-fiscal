@@ -30,7 +30,7 @@ RedirectMatch 404 ^/hosting(/.*)?$
 # cron y documentación, así que se bloquea entera. Cuando tenga pantalla de
 # consulta se abrirá listas/index.php y quedarán bloqueados listas/cron y
 # listas/lib.
-RedirectMatch 404 ^/listas(/.*)?$
+RedirectMatch 404 ^/listas/(cron|docs)(/.*)?$
 
 # La aplicacion servida por boletin.php y su codigo fuente NO se sirven
 # directamente: si se pudieran pedir por URL, la pantalla de acceso no

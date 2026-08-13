@@ -121,13 +121,8 @@ header('Cache-Control: private, no-store');
         </p>
         <span class="tarjeta-pie">Abrir</span>
       </a>
-    </div>
 
-    <h2 class="seccion-titulo seccion-titulo-2">En desarrollo</h2>
-    <p class="seccion-nota">Anunciadas aquí para tenerlas a la vista. Todavía no abren.</p>
-
-    <div class="rejilla">
-      <div class="tarjeta tarjeta-pendiente">
+      <a class="tarjeta" href="listas/">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
@@ -141,9 +136,14 @@ header('Cache-Control: private, no-store');
           firmes y no localizados, operaciones inexistentes y transmisión
           indebida de pérdidas fiscales.
         </p>
-        <span class="insignia">En desarrollo</span>
-      </div>
+        <span class="tarjeta-pie">Abrir</span>
+      </a>
+    </div>
 
+    <h2 class="seccion-titulo seccion-titulo-2">En desarrollo</h2>
+    <p class="seccion-nota">Anunciadas aquí para tenerlas a la vista. Todavía no abren.</p>
+
+    <div class="rejilla">
       <div class="tarjeta tarjeta-pendiente">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
