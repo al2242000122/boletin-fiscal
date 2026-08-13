@@ -15,6 +15,15 @@ $hayConfig = is_file(__DIR__ . '/../privado/config.php');
 $conecta = false; $errorBD = ''; $tablas = []; $resumen = null; $ingestas = [];
 $cronUltima = null; $alertas = 0; $hayArt69 = false;
 
+/* Las instrucciones para dar de alta la tarea programada, ocultas de momento:
+   enseñan la ruta absoluta del servidor y un aviso de que todavía no hay
+   constancia de que haya corrido, y eso no tiene por qué salir en pantalla
+   delante de nadie. No se pierde nada: el comando y la última corrida siguen
+   en «Ver detalles técnicos», y en cuanto la tarea deje constancia aparece
+   sola la línea de que está funcionando.
+   Para volver a verlas, poner esto en true. */
+const MOSTRAR_ALTA_DEL_CRON = false;
+
 if ($hayConfig) {
     try {
         require_once __DIR__ . '/cron/lib/bd.php';
@@ -293,7 +302,7 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
     <?php endif; ?>
 
 
-    <?php if ($listo && !$cronUltima): ?>
+    <?php if ($listo && !$cronUltima && MOSTRAR_ALTA_DEL_CRON): ?>
       <!-- Instrucciones de alta del cron: se enseñan solo mientras no haya
            corrido ni una vez. En cuanto la tarea deja constancia, este bloque
            desaparece y el comando queda en «detalles técnicos». -->
