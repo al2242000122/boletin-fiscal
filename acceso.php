@@ -14,10 +14,10 @@
 
 /* Hash de la contraseña. Se genera UNA vez con _configurar.php y se pega aquí.
    Nunca se guarda la contraseña en claro, ni aquí ni en ningún otro sitio. */
-const ACCESO_HASH = 'PENDIENTE';
+const ACCESO_HASH = '$2y$10$VWazyWlY5g7UVn3YrbVq0.9RN/upnp5PHwFbm4iuEHSB74gYg3kny';
 
-const ACCESO_USUARIO      = 'despacho';
-const ACCESO_MAX_INTENTOS = 5;
+const ACCESO_USUARIO      = 'Insuser@2026';
+const ACCESO_MAX_INTENTOS = 90;
 const ACCESO_ESPERA       = 300;   // segundos de bloqueo tras agotar intentos
 
 function acceso_iniciar(): void
