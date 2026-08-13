@@ -76,21 +76,33 @@ function ingerir(string $clave, array $lista, bool $forzar, callable $log): arra
 
     /* --- descarga a temporal ------------------------------------------- */
     $tmp = tempnam(sys_get_temp_dir(), 'sat');
-    $bytes = descargar($lista['url'], $tmp);
+    $bajada = descargar($lista['url'], $tmp);
+    $bytes  = $bajada['bytes'];
+    $fechaServidor = $bajada['fecha_servidor'];
     $sha = hash_file('sha256', $tmp);
-    $log(sprintf('   descargado  %s bytes  sha %s…', number_format($bytes), substr($sha, 0, 12)));
+    $log(sprintf('   descargado  %s bytes  sha %s…%s', number_format($bytes), substr($sha, 0, 12),
+                 $fechaServidor ? '  publicado ' . substr($fechaServidor, 0, 10) : ''));
 
     /* --- ¿ya lo teníamos? ---------------------------------------------- */
     // Se comprueba procesado_en, no solo que exista el snapshot: si una corrida
     // anterior se cayó a media carga, la fila del snapshot ya estaba puesta y
     // saltárselo dejaría esa lista sin cargar para siempre.
-    $st = bd()->prepare("SELECT id, procesado_en FROM snapshots WHERE lista = ? AND sha256 = ?");
+    $st = bd()->prepare("SELECT id, procesado_en, fecha_servidor FROM snapshots WHERE lista = ? AND sha256 = ?");
     $st->execute([$clave, $sha]);
     $prev = $st->fetch();
     $existente = $prev['id'] ?? null;
     if ($existente && $prev['procesado_en'] !== null && !$forzar) {
         unlink($tmp);
         $log("   sin cambios respecto al snapshot #$existente — no se reprocesa");
+        // Los snapshots cargados antes de que se capturara esta cabecera la
+        // tienen vacía. Como el archivo acaba de bajarse igual, se aprovecha
+        // para rellenarla: así las constancias de lo ya cargado también la
+        // tienen, sin necesidad de reprocesar nada.
+        if ($prev['fecha_servidor'] === null && $fechaServidor !== null) {
+            bd()->prepare("UPDATE snapshots SET fecha_servidor = ? WHERE id = ?")
+                ->execute([$fechaServidor, $existente]);
+            $log("   (se rellenó la fecha de publicación que faltaba: " . substr($fechaServidor, 0, 10) . ')');
+        }
         bd()->prepare("UPDATE ingestas SET ultimo_exito=? WHERE lista=?")->execute([$ahora, $clave]);
         return ['eventos' => 0];
     }
@@ -111,11 +123,13 @@ function ingerir(string $clave, array $lista, bool $forzar, callable $log): arra
     if ($existente) {
         $snapshotId = (int)$existente;
         bd()->prepare("DELETE FROM eventos WHERE snapshot_id = ?")->execute([$snapshotId]);
+        bd()->prepare("UPDATE snapshots SET fecha_servidor = ? WHERE id = ?")
+            ->execute([$fechaServidor, $snapshotId]);
     } else {
         bd()->prepare("INSERT INTO snapshots
               (lista,url,sha256,bytes,fecha_archivo,fecha_servidor,ruta_archivo,descargado_en)
               VALUES (?,?,?,?,?,?,?,?)")
-            ->execute([$clave, $lista['url'], $sha, $bytes, $fechaArchivo, null,
+            ->execute([$clave, $lista['url'], $sha, $bytes, $fechaArchivo, $fechaServidor,
                        str_replace(RAIZ_ARCHIVO . '/', '', $destino), date('Y-m-d H:i:s')]);
         $snapshotId = (int)bd()->lastInsertId();
     }
@@ -284,21 +298,54 @@ function grupo_familia(string $grupo): string
     return $grupo === 'art69' ? 'art69' : ($grupo === 'art69b_bis' ? 'art69b_bis' : 'art69b');
 }
 
-function descargar(string $url, string $destino): int
+/**
+ * Descarga a un archivo y devuelve ['bytes' => int, 'fecha_servidor' => ?string].
+ *
+ * La fecha del servidor hace falta para las constancias: en los siete archivos
+ * del Artículo 69 es la ÚNICA fecha que existe, porque no traen la línea
+ * "Información actualizada al …" que sí traen los del 69-B.
+ */
+function descargar(string $url, string $destino): array
 {
     $f = fopen($destino, 'w');
     $ch = curl_init($url);
+    $cabeceras = '';
+
     curl_setopt_array($ch, [
         CURLOPT_FILE => $f, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 300,
         CURLOPT_CONNECTTIMEOUT => 20, CURLOPT_USERAGENT => FUENTES_UA, CURLOPT_FAILONERROR => true,
+        // No se puede usar CURLOPT_HEADER con CURLOPT_FILE: escribiría las
+        // cabeceras dentro del CSV. Se recogen aparte, línea a línea.
+        CURLOPT_HEADERFUNCTION => function ($ch, $linea) use (&$cabeceras) {
+            // Con FOLLOWLOCATION llegan también las cabeceras de los redirects.
+            // Al ver una línea de estado nueva se descarta lo anterior, para
+            // quedarse con las de la respuesta que de verdad trajo el archivo.
+            if (stripos($linea, 'HTTP/') === 0) $cabeceras = '';
+            $cabeceras .= $linea;
+            // Devolver la longitud es obligatorio: si no coincide, curl aborta
+            // la transferencia entera.
+            return strlen($linea);
+        },
     ]);
+
     $ok  = curl_exec($ch);
     $err = curl_error($ch);
     $cod = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     fclose($f);
     if (!$ok) throw new RuntimeException("descarga fallida (HTTP $cod) $err");
-    return (int)filesize($destino);
+
+    // Last-Modified viene en GMT por especificación, y fuentes_fecha_servidor()
+    // lo devuelve tal cual. Aquí se pasa a hora de México porque TODAS las demás
+    // fechas de la base las pone date() con la zona que fija bd.php: guardar
+    // esta en UTC dejaría una constancia diciendo "descargado a las 08:14" para
+    // un archivo que llegó a las 02:14.
+    $gmt = fuentes_fecha_servidor($cabeceras);
+
+    return [
+        'bytes'          => (int)filesize($destino),
+        'fecha_servidor' => $gmt ? date('Y-m-d H:i:s', strtotime($gmt . ' UTC')) : null,
+    ];
 }
 
 function registrar_error(string $lista, string $msg): void

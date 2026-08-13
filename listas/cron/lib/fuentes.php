@@ -83,7 +83,15 @@ function fuentes_pedir(string $url, bool $soloCabeceras = false): array
 function fuentes_fecha_servidor(string $cabeceras): ?string
 {
     if (preg_match('/^Last-Modified:\s*(.+)$/mi', $cabeceras, $m)) {
-        $t = strtotime(trim($m[1]));
+        // Se descarta el día de la semana antes de interpretar la fecha.
+        // Medido el 13/08/2026: ante "Tue, 17 Jun 2026" —el 17 es miércoles—
+        // PHP no da error, avanza hasta el martes siguiente y devuelve el 23.
+        // Seis días de diferencia, sin aviso, en la fecha que se cita como
+        // evidencia en las constancias. El nombre del día no aporta nada que no
+        // esté ya en el número: sobra, y solo puede estropear la lectura.
+        // strtotime y DateTimeImmutable::createFromFormat se comportan igual.
+        $fecha = preg_replace('/^[A-Za-z]{3,9},\s*/', '', trim($m[1]));
+        $t = strtotime($fecha);
         if ($t) return gmdate('Y-m-d H:i:s', $t);
     }
     return null;
