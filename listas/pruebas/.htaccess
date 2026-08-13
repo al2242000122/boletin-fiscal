@@ -1,0 +1,13 @@
+# ============================================================================
+#  Las pruebas no son parte del sitio.
+#
+#  Hostinger publica el repositorio tal cual, así que sin esto
+#  insusermx.com/listas/pruebas/correr.php sería una URL pública que crea
+#  tablas. El .htaccess de la raíz bloquea listas/cron y listas/docs, pero se
+#  escribió antes de que esta carpeta existiera; se bloquea aquí para no tocar
+#  aquel archivo.
+#
+#  correr.php además se niega a ejecutarse fuera de la línea de comandos, por
+#  si algún día esto se sirve con algo que no lee .htaccess.
+# ============================================================================
+Require all denied
