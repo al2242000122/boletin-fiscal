@@ -12,7 +12,7 @@
 
 require __DIR__ . '/../acceso.php';
 acceso_exigir();
-require_once __DIR__ . '/cron/lib/bd.php';
+require_once __DIR__ . '/cron/lib/migracion.php';
 
 $fTipo  = (string)($_GET['tipo'] ?? '');
 $fPrio  = (string)($_GET['prioridad'] ?? '');
@@ -21,8 +21,11 @@ $pagina = max(1, (int)($_GET['p'] ?? 1));
 const POR_PAGINA = 60;
 
 $listo = false; $errorBD = '';
-try { bd()->query("SELECT 1 FROM eventos LIMIT 1"); $listo = true; }
-catch (Throwable $e) { $errorBD = $e->getMessage(); }
+try {
+    bd()->query("SELECT 1 FROM eventos LIMIT 1");
+    migrar_columnas_pendientes();   // la columna linea_base puede no existir aún
+    $listo = true;
+} catch (Throwable $e) { $errorBD = $e->getMessage(); }
 
 $eventos = []; $total = 0; $resumen = []; $hayLineaBase = false; $ultimoMovimiento = null;
 
@@ -134,7 +137,8 @@ function url(array $c = []): string {
 
     <?php if (!$listo): ?>
       <div class="alerta"><b>Todavía no hay datos.</b>
-        Ve a <a href="index.php">Administración</a> y completa la puesta en marcha.</div>
+        Ve a <a href="index.php">Administración</a> y completa la puesta en marcha.
+        <?php if ($errorBD): ?><br><span class="tenue"><?= esc($errorBD) ?></span><?php endif; ?></div>
     <?php else: ?>
 
       <?php if ($resumen): ?>

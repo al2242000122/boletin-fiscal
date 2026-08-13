@@ -8,6 +8,7 @@
    ============================================================================ */
 
 require_once __DIR__ . '/bd.php';
+require_once __DIR__ . '/migracion.php';
 require_once __DIR__ . '/fuentes.php';
 require_once __DIR__ . '/csv_sat.php';
 
@@ -21,6 +22,9 @@ const RAIZ_ARCHIVO = __DIR__ . '/../../../privado/listas/raw';
 function ingestar(array $filtro = [], bool $forzar = false, ?callable $log = null): array
 {
     $log ??= function ($t) {};
+
+    // Por si la base se creó con una versión anterior del esquema.
+    foreach (migrar_columnas_pendientes() as $paso) $log("   (base al día: $paso)");
 
     $d = fuentes_descubrir();
     if (!$d['ok']) return ['ok' => false, 'motivo' => $d['motivo'], 'eventos' => 0, 'errores' => 1];

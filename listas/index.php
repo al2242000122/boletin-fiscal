@@ -21,6 +21,9 @@ if ($hayConfig) {
         $tablas = bd()->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
         $conecta = true;
         if (in_array('estatus', $tablas, true)) {
+            // Bases creadas con una versión anterior: se ponen al día solas.
+            require_once __DIR__ . '/cron/lib/migracion.php';
+            $migrado = migrar_columnas_pendientes();
             $resumen = bd()->query("
                 SELECT lista, COUNT(*) total,
                        SUM(situacion='Presunto') presuntos,
