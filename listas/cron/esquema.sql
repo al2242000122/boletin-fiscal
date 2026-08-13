@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS snapshots (
   ruta_archivo   VARCHAR(300)    NOT NULL,           -- copia cruda archivada
   descargado_en  DATETIME        NOT NULL,
   procesado_en   DATETIME        NULL,
+  -- La primera carga de una lista no es noticia: es el punto de partida. Sus
+  -- altas no deben contarse como alertas ni avisarse por correo.
+  linea_base     TINYINT(1)      NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   -- Idempotencia: el mismo archivo no se procesa dos veces.
   UNIQUE KEY uk_lista_sha (lista, sha256),

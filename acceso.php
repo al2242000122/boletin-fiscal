@@ -103,11 +103,30 @@ function acceso_salir(): void
     session_destroy();
 }
 
+/* Dirección del portal (la pantalla de acceso), se llame desde donde se llame.
+   No basta con 'index.php': desde listas/ eso apunta a listas/index.php, que a
+   su vez exige sesión y vuelve a redirigir — el navegador acaba en
+   ERR_TOO_MANY_REDIRECTS en lugar de enseñar el acceso. Se cuentan los niveles
+   que hay desde el script en curso hasta la carpeta donde vive este archivo,
+   que es la raíz del sitio. */
+function acceso_url_portal(): string
+{
+    $raiz   = rtrim(str_replace('\\', '/', __DIR__), '/');
+    $actual = rtrim(str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_FILENAME'] ?? ''))), '/');
+
+    if ($actual !== '' && $actual !== $raiz && strpos($actual, $raiz . '/') === 0) {
+        $resto   = substr($actual, strlen($raiz) + 1);
+        $niveles = substr_count($resto, '/') + 1;
+        return str_repeat('../', $niveles) . 'index.php';
+    }
+    return 'index.php';
+}
+
 /* Puerta para las páginas que no deben verse sin sesión. */
 function acceso_exigir(): void
 {
     if (!acceso_activo()) {
-        header('Location: index.php');
+        header('Location: ' . acceso_url_portal());
         exit;
     }
 }

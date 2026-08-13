@@ -6,6 +6,12 @@
    (.gitignore) y fuera del alcance del navegador (.htaccess). Nunca aquí.
    ============================================================================ */
 
+/* Todas las fechas que se guardan y se enseñan las pone PHP con date(), no la
+   base. El servidor de Hostinger corre en UTC, así que sin esto el panel diría
+   que la última actualización fue a las 19:15 cuando en México eran las 13:15.
+   Se fija aquí porque este archivo lo cargan tanto las páginas como el cron. */
+date_default_timezone_set('America/Mexico_City');
+
 function bd_config(): array
 {
     // Permite apuntar a otra base sin tocar config.php. Se usa para pruebas.
@@ -80,4 +86,18 @@ function bd_ejecutar_sql(string $ruta): int
         $n++;
     }
     return $n;
+}
+
+/* ---------------------------------------------------------------- columnas
+   CREATE TABLE IF NOT EXISTS no añade columnas a una tabla que ya existe, y
+   ADD COLUMN IF NOT EXISTS solo lo entiende MariaDB. Se consulta el catálogo,
+   que funciona en los dos. */
+function bd_asegurar_columna(string $tabla, string $columna, string $definicion): bool
+{
+    $st = bd()->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS
+                         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?");
+    $st->execute([$tabla, $columna]);
+    if ((int)$st->fetchColumn() > 0) return false;
+    bd()->exec("ALTER TABLE `$tabla` ADD COLUMN `$columna` $definicion");
+    return true;
 }

@@ -175,7 +175,8 @@ function url(array $cambios = []): string
       </div>
     </div>
     <p class="cabecera-contacto">
-      <a href="index.php">Administración</a> · <a href="../index.php">Portal</a>
+      <a href="alertas.php">Alertas</a> · <a href="index.php">Administración</a> ·
+      <a href="../index.php">Portal</a>
     </p>
   </div>
 </header>

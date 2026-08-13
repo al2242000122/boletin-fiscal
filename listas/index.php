@@ -13,6 +13,7 @@ acceso_exigir();
 /* --- estado ------------------------------------------------------------- */
 $hayConfig = is_file(__DIR__ . '/../privado/config.php');
 $conecta = false; $errorBD = ''; $tablas = []; $resumen = null; $ingestas = [];
+$cronUltima = null; $alertas = 0;
 
 if ($hayConfig) {
     try {
@@ -26,6 +27,13 @@ if ($hayConfig) {
                        SUM(tipo_persona='M') morales
                 FROM estatus WHERE vigente = 1 GROUP BY lista ORDER BY lista")->fetchAll();
             $ingestas = bd()->query("SELECT * FROM ingestas ORDER BY lista")->fetchAll();
+            // La tarea programada deja constancia al terminar. Si hay alguna,
+            // sobra explicar cómo darla de alta.
+            $cronUltima = bd()->query("SELECT MAX(consultado_en) FROM bitacora
+                                       WHERE origen = 'cron'")->fetchColumn() ?: null;
+            $alertas = (int)bd()->query("SELECT COUNT(*) FROM eventos e
+                                         JOIN snapshots s ON s.id = e.snapshot_id
+                                         WHERE s.linea_base = 0")->fetchColumn();
         }
     } catch (Throwable $e) { $errorBD = $e->getMessage(); }
 }
@@ -134,7 +142,8 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       </div>
     </div>
     <p class="cabecera-contacto">
-      <a href="consulta.php">Consultar RFC</a> · <a href="../index.php">Portal</a>
+      <a href="alertas.php">Alertas</a> · <a href="consulta.php">Consultar RFC</a> ·
+      <a href="../index.php">Portal</a>
     </p>
   </div>
 </header>
@@ -175,7 +184,10 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
         <div>
           <b>La herramienta está funcionando.</b>
           <div class="tenue">Última actualización:
-            <?= $ultimoExito ? esc($ultimoExito) : 'sin registro' ?></div>
+            <?= $ultimoExito ? esc($ultimoExito) : 'sin registro' ?>
+            · <a href="alertas.php"><?= $alertas
+                 ? number_format($alertas) . ' movimiento' . ($alertas === 1 ? '' : 's')
+                 : 'sin movimientos' ?></a></div>
         </div>
         <form method="post" style="margin:0">
           <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
@@ -266,7 +278,10 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
     <?php endif; ?>
 
 
-    <?php if ($listo): ?>
+    <?php if ($listo && !$cronUltima): ?>
+      <!-- Instrucciones de alta del cron: se enseñan solo mientras no haya
+           corrido ni una vez. En cuanto la tarea deja constancia, este bloque
+           desaparece y el comando queda en «detalles técnicos». -->
       <h2 class="seccion-titulo seccion-titulo-2">Actualización automática</h2>
       <p class="seccion-nota">
         El botón de arriba solo trae el artículo 69-B. Las listas del artículo 69
@@ -282,6 +297,13 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       <p class="seccion-nota" style="margin-top:12px">
         Esa ruta es la de tu servidor, ya resuelta: cópiala tal cual. Si hPanel
         pide la ruta de PHP por separado, usa <code>php</code> y deja lo demás.
+        Este apartado se quita solo cuando la tarea corra por primera vez.
+      </p>
+    <?php elseif ($listo && $cronUltima): ?>
+      <p class="seccion-nota" style="margin-top:22px">
+        La tarea automática está corriendo: última vez el
+        <b><?= esc(substr((string)$cronUltima, 0, 16)) ?></b>.
+        El comando, por si hay que volver a darlo de alta, está en los detalles técnicos.
       </p>
     <?php endif; ?>
 
@@ -292,7 +314,10 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
         <tr><td>privado/config.php</td><td><?= $hayConfig ? 'presente' : 'falta' ?></td></tr>
         <tr><td>Conexión a MySQL</td><td><?= $conecta ? 'correcta' : 'sin conexión' ?></td></tr>
         <tr><td>Tablas</td><td><?= $tablas ? esc(implode(', ', $tablas)) : 'ninguna' ?></td></tr>
-        <tr><td>Script del cron</td><td class="tenue"><?= esc($rutaCron) ?></td></tr>
+        <tr><td>Comando del cron</td>
+            <td class="tenue">/usr/bin/php <?= esc($rutaCron) ?></td></tr>
+        <tr><td>Última corrida automática</td>
+            <td class="tenue"><?= $cronUltima ? esc($cronUltima) : 'todavía ninguna' ?></td></tr>
       </table>
     </details>
 

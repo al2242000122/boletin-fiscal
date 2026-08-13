@@ -72,7 +72,7 @@ function ingerir(string $clave, array $lista, bool $forzar, callable $log): arra
     $existente = $prev['id'] ?? null;
     if ($existente && $prev['procesado_en'] !== null && !$forzar) {
         unlink($tmp);
-        echo "   sin cambios respecto al snapshot #$existente — no se reprocesa\n";
+        $log("   sin cambios respecto al snapshot #$existente — no se reprocesa");
         bd()->prepare("UPDATE ingestas SET ultimo_exito=? WHERE lista=?")->execute([$ahora, $clave]);
         return ['eventos' => 0];
     }
@@ -142,9 +142,23 @@ function ingerir(string $clave, array $lista, bool $forzar, callable $log): arra
     $log(sprintf('   filas %s · cargadas %s · suprimidas %d · descartadas %d',
                  number_format($filas), number_format($validas), $suprimidas, $descartadas));
 
-    /* --- diferencias ----------------------------------------------------- */
+    /* --- diferencias -----------------------------------------------------
+       Si la lista no tenía nada cargado, esto es la línea base: todo entraría
+       como alta y no sería noticia. Se registra como tal para que no ensucie
+       las alertas ni dispare avisos por correo. */
+    $st = bd()->prepare("SELECT COUNT(*) FROM estatus WHERE lista = ? AND vigente = 1");
+    $st->execute([$clave]);
+    $esLineaBase = ((int)$st->fetchColumn() === 0);
+
     $hoy = $fechaArchivo ?: date('Y-m-d');
     $ev = aplicar_diferencias($clave, $snapshotId, $hoy);
+
+    if ($esLineaBase) {
+        bd()->prepare("UPDATE snapshots SET linea_base = 1 WHERE id = ?")->execute([$snapshotId]);
+        bd()->prepare("UPDATE eventos SET prioridad = 0 WHERE snapshot_id = ?")->execute([$snapshotId]);
+        $ev['urgentes'] = 0;
+        $log('   (carga inicial: se registra como línea base, sin alertas)');
+    }
 
     bd()->prepare("UPDATE snapshots SET filas=?, filas_validas=?, procesado_en=? WHERE id=?")
         ->execute([$filas, $validas, date('Y-m-d H:i:s'), $snapshotId]);

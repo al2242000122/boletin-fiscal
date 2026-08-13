@@ -26,6 +26,17 @@ for ($i = 0; $i < count($args); $i++) {
 
 $r = ingestar($filtro, $forzar, function (string $linea) { echo "$linea\n"; });
 
+/* Deja constancia de que la tarea programada corrió de verdad. El panel la usa
+   para dejar de enseñar las instrucciones de instalación del cron: mientras no
+   haya ni una corrida, hay que seguir explicando cómo darlo de alta. */
+try {
+    bd()->prepare("INSERT INTO bitacora (usuario,ip,origen,rfc_consultado,cantidad,resultado,consultado_en)
+                   VALUES ('cron', NULL, 'cron', NULL, ?, ?, ?)")
+        ->execute([(int)$r['eventos'],
+                   $r['errores'] ? "con {$r['errores']} fallo(s)" : 'ok',
+                   date('Y-m-d H:i:s')]);
+} catch (Throwable $e) { /* si no se puede registrar, no se estropea la corrida */ }
+
 if (!$r['ok'] && $r['motivo']) { fwrite(STDERR, "FALLO: {$r['motivo']}\n"); exit(2); }
 echo "\n" . ($r['errores'] ? "Terminado con {$r['errores']} fallo(s). " : "Terminado. ")
    . "Eventos nuevos: {$r['eventos']}\n";
