@@ -425,9 +425,13 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       <h2 class="seccion-titulo seccion-titulo-2">Aviso por correo</h2>
       <?php if ($correos): ?>
         <p class="seccion-nota">
-          Cuando el SAT publique un RFC nuevo como presunto, o alguno pase a
-          definitivo, sale un correo a <b><?= esc(implode(', ', $correos)) ?></b>.
-          Solo lo urgente, una vez por movimiento, nunca la carga inicial.
+          Sale un correo a <b><?= esc(implode(', ', $correos)) ?></b> en dos casos:
+          cuando el SAT <b>publica una versión nueva</b> de cualquiera de los
+          listados —la señal de que hay que volver a pasar la cartera por el
+          lote— y cuando un RFC <b>entra como presunto o pasa a definitivo</b>
+          en el 69-B, que es lo que tiene plazo corriendo.
+          Una sola carta por corrida, nada se avisa dos veces, y la carga
+          inicial nunca.
           <?php if ($pendientes): ?>
             Hay <b><?= $pendientes ?></b> sin avisar todavía; salen en la próxima corrida.
           <?php endif; ?>

@@ -54,5 +54,13 @@ function migrar_columnas_pendientes(): array
         $hizo[] = sprintf('%s evento(s) anteriores se dan por avisados', number_format((int)$sellados));
     }
 
+    if (bd_asegurar_columna('snapshots', 'avisado_en', 'DATETIME NULL DEFAULT NULL')) {
+        $hizo[] = 'columna snapshots.avisado_en';
+        // Lo ya cargado no se avisa: son publicaciones que el despacho ya tiene
+        // delante. Solo interesan las que lleguen a partir de ahora.
+        $s = bd()->exec("UPDATE snapshots SET avisado_en = NOW() WHERE avisado_en IS NULL");
+        $hizo[] = sprintf('%s publicación(es) anteriores se dan por avisadas', number_format((int)$s));
+    }
+
     return $hecho = $hizo;
 }

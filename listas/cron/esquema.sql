@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS snapshots (
   -- La primera carga de una lista no es noticia: es el punto de partida. Sus
   -- altas no deben contarse como alertas ni avisarse por correo.
   linea_base     TINYINT(1)      NOT NULL DEFAULT 0,
+  -- Cuándo se avisó por correo de que el SAT publicó esta versión. NULL =
+  -- pendiente. Es lo que dispara el «vuelve a barrer la cartera».
+  avisado_en     DATETIME        NULL DEFAULT NULL,
   PRIMARY KEY (id),
   -- Idempotencia: el mismo archivo no se procesa dos veces.
   UNIQUE KEY uk_lista_sha (lista, sha256),
