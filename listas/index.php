@@ -127,6 +127,24 @@ if ($accion && hash_equals($_SESSION['token'] ?? '', $_POST['token'] ?? '')) {
             if ($p['ok']) {
                 echo "\nSi no llega en unos minutos, revisa la carpeta de correo no deseado.\n";
             }
+        } elseif ($accion === 'dof_traer' && $hayTablas) {
+            /* La serie entera en una sola petición: el DOF devuelve los 1,414
+               días desde 2021 en 320 KB y un par de segundos, así que esto sí
+               entra por web sin acercarse al límite de tiempo. */
+            require_once __DIR__ . '/cron/lib/dof_tc.php';
+            $d = dof_tc_descargar('01/01/2021', date('d/m/Y'));
+            if ($d['error'] !== '') throw new RuntimeException($d['error']);
+            $n = dof_tc_guardar($d['filas']);
+            dof_tc_registrar_corrida('01/01/2021', date('d/m/Y'), count($d['filas']), $n,
+                $d['fuera_rango'], $d['filas'] ? end($d['filas'])['fecha'] : null,
+                (bool)$d['filas'], 'serie completa desde el panel');
+            printf("Serie del tipo de cambio: %s días leídos, %s nuevos.\n",
+                   number_format(count($d['filas'])), number_format($n));
+            if ($d['filas']) echo "Último publicado: " . end($d['filas'])['fecha'] . "\n";
+        } elseif ($accion === 'dof_sync' && $hayTablas) {
+            require_once __DIR__ . '/cron/lib/dof_tc.php';
+            dof_tc_sincronizar(15, function ($l) { echo "$l\n"; });
+            echo "\nTerminado.\n";
         } elseif ($accion === 'cargar_lista' && $hayTablas) {
             /* Una sola lista por petición. Las del Artículo 69 son grandes
                —Firmes son 264 368 registros medidos, 30 s en local— y meterlas
@@ -482,6 +500,49 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       $ultimoAviso = bd()->query("SELECT MAX(consultado_en) FROM bitacora
                                   WHERE origen = 'aviso'")->fetchColumn() ?: null;
       $porAvisar = $pendientes + $pubPendientes; ?>
+      <?php /* ---- tipo de cambio del DOF: el latido ---- */
+        require_once __DIR__ . '/cron/lib/dof_tc.php';
+        $tcEstado = dof_tc_estado(); ?>
+      <h2 class="seccion-titulo seccion-titulo-2">Tipo de cambio del DOF</h2>
+      <?php if (!$tcEstado['hay']): ?>
+        <p class="seccion-nota">
+          Todavía no está cargada la serie. Son <b>1.414 días desde enero de
+          2021</b> y el DOF los entrega de una sola vez en 320 KB: un par de
+          segundos. A partir de ahí se mantiene sola con la tarea programada.
+        </p>
+        <form method="post">
+          <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+          <input type="hidden" name="accion" value="dof_traer">
+          <button class="btn-accion">Traer la serie completa</button>
+        </form>
+      <?php else: ?>
+        <div class="<?= $tcEstado['vivo'] ? 'estado' : 'alerta' ?>" style="margin-bottom:14px">
+          <div>
+            <?php if ($tcEstado['vivo']): ?>
+              <b>Al día.</b>
+              <div class="tenue">
+                Último publicado el <?= esc($tcEstado['ultima']) ?>:
+                <?= esc(rtrim(rtrim($tcEstado['valor'], '0'), '.')) ?> pesos por dólar ·
+                <?= number_format($tcEstado['total']) ?> días en la serie.
+                <br>Esto es el latido: el DOF publica todos los días hábiles, así
+                que mientras esta fecha se mueva, la tarea programada está viva.
+              </div>
+            <?php else: ?>
+              <b>Lleva <?= (int)$tcEstado['dias'] ?> días sin actualizarse.</b><br>
+              El DOF publica todos los días hábiles, así que esto significa que la
+              tarea programada dejó de correr. Mientras siga así, tampoco se
+              detectaría una publicación nueva del SAT.
+            <?php endif; ?>
+          </div>
+        </div>
+        <form method="post" style="display:inline-block;margin-right:10px">
+          <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+          <input type="hidden" name="accion" value="dof_sync">
+          <button class="btn-accion" style="padding:8px 16px;font-size:13px">Actualizar ahora</button>
+        </form>
+        <a class="seccion-nota" href="tipo-cambio.php">Ver la pantalla de consulta</a>
+      <?php endif; ?>
+
       <h2 class="seccion-titulo seccion-titulo-2">Aviso por correo</h2>
       <?php if ($correos): ?>
         <p class="seccion-nota">
