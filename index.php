@@ -134,31 +134,33 @@ header('Cache-Control: private, no-store');
         <p>
           Consulta de RFC contra los listados que publica el SAT: créditos
           firmes y no localizados, operaciones inexistentes y transmisión
-          indebida de pérdidas fiscales.
+          indebida de pérdidas fiscales. Uno a uno o la cartera entera de una
+          vez, con descarga en Excel.
         </p>
         <span class="tarjeta-pie">Abrir</span>
       </a>
-    </div>
 
-    <h2 class="seccion-titulo seccion-titulo-2">En desarrollo</h2>
-    <p class="seccion-nota">Anunciadas aquí para tenerlas a la vista. Todavía no abren.</p>
-
-    <div class="rejilla">
-      <div class="tarjeta tarjeta-pendiente">
+      <a class="tarjeta" href="listas/tipo-cambio.php">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
                stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 9h14l-3.5-3.5"/><path d="M20 15H6l3.5 3.5"/>
           </svg>
         </div>
-        <h2>API de tipo de cambio</h2>
+        <h2>Tipo de cambio del DOF</h2>
         <p>
-          Tipo de cambio publicado en el DOF, consultable por fecha y
-          disponible para las demás herramientas del portal.
+          El publicado en el Diario Oficial, día por día desde 2021. Dice por
+          separado qué salió publicado esa fecha y cuál se aplica a una
+          operación de ese día, que no son el mismo.
         </p>
-        <span class="insignia">En desarrollo</span>
-      </div>
+        <span class="tarjeta-pie">Abrir</span>
+      </a>
+    </div>
 
+    <h2 class="seccion-titulo seccion-titulo-2">En desarrollo</h2>
+    <p class="seccion-nota">Anunciada aquí para tenerla a la vista. Todavía no abre.</p>
+
+    <div class="rejilla">
       <div class="tarjeta tarjeta-pendiente">
         <div class="tarjeta-icono" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
