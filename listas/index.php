@@ -88,6 +88,28 @@ $conErrores = array_filter($ingestas, fn($i) => !empty($i['ultimo_error']));
 /* Ruta absoluta real para la línea del cron: así no hay que adivinarla. */
 $rutaCron = str_replace('\\', '/', realpath(__DIR__ . '/cron/ingesta.php'));
 
+/* ¿Qué PHP hay de verdad en este servidor?
+   Es la causa más habitual de que una tarea programada no haga nada: se copia
+   `/usr/bin/php` de un tutorial, ese archivo no existe en el plan, y el cron
+   falla en silencio porque nadie lee su salida. En vez de suponerlo, se prueban
+   las rutas típicas de hosting compartido y se enseñan las que existen. */
+function php_disponibles(): array
+{
+    $candidatos = [PHP_BINARY, '/usr/bin/php', '/usr/local/bin/php'];
+    foreach (['84','83','82','81','80','74'] as $v) {
+        $candidatos[] = "/opt/alt/php$v/usr/bin/php";                 // CloudLinux
+        $candidatos[] = "/opt/cpanel/ea-php$v/root/usr/bin/php";      // cPanel EasyApache
+        $candidatos[] = '/usr/bin/php' . substr($v, 0, 1) . '.' . substr($v, 1);
+    }
+    $hay = [];
+    foreach (array_unique(array_filter($candidatos)) as $c) {
+        // open_basedir puede impedir mirar fuera del hogar: se calla y sigue.
+        if (@is_file($c) && @is_executable($c)) $hay[] = str_replace('\\', '/', $c);
+    }
+    return $hay;
+}
+$phpDisponibles = php_disponibles();
+
 /* --- acciones ------------------------------------------------------------ */
 $salida = ''; $accion = $_POST['accion'] ?? '';
 
@@ -407,6 +429,37 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
           hPanel y comprueba que la ruta coincide con la de arriba.
         <?php endif; ?>
       </div>
+    <?php elseif ($listo && !$cronUltima): ?>
+      <?php /* Compacto, no la guía entera: lo único accionable es comprobar el
+               comando, y lo que más falla es la ruta de PHP. */ ?>
+      <h2 class="seccion-titulo seccion-titulo-2">La tarea automática no ha corrido</h2>
+      <div class="aviso">
+        <b>Sin ella, esto no se actualiza solo ni manda avisos.</b>
+        Todo lo que hay cargado se trajo a mano desde aquí. Revisa en
+        hPanel → Avanzado → Trabajos cron que la tarea exista y que el comando
+        sea exactamente este:
+      </div>
+      <?php $mejor = $phpDisponibles[0] ?? '/usr/bin/php'; ?>
+      <code class="comando"><?= esc($mejor) ?> <?= esc($rutaCron) ?></code>
+      <p class="seccion-nota" style="margin-top:12px">
+        <?php if ($phpDisponibles): ?>
+          Esa ruta de PHP está comprobada: existe en este servidor ahora mismo.
+          <?php if (count($phpDisponibles) > 1): ?>
+            También valdrían
+            <?php foreach (array_slice($phpDisponibles, 1) as $p): ?>
+              <code><?= esc($p) ?></code>
+            <?php endforeach; ?>.
+          <?php endif; ?>
+          Si hPanel pide la ruta de PHP en un campo aparte, pon solo
+          <code>php</code> y deja el resto de la línea.
+        <?php else: ?>
+          No pude comprobar ninguna ruta de PHP desde aquí —el servidor no me
+          deja mirar fuera de la carpeta—, así que esa es la de costumbre pero
+          no está verificada. Si la tarea sigue sin correr mañana, pregunta a
+          soporte de Hostinger cuál es la ruta de PHP para trabajos cron.
+        <?php endif; ?>
+      </p>
+
     <?php elseif ($listo && $cronUltima): ?>
       <p class="seccion-nota" style="margin-top:22px">
         La tarea automática está corriendo: última vez el
@@ -465,7 +518,12 @@ const AVISO_REMITENTE = 'alertas@insusermx.com';</code>
         <tr><td>Conexión a MySQL</td><td><?= $conecta ? 'correcta' : 'sin conexión' ?></td></tr>
         <tr><td>Tablas</td><td><?= $tablas ? esc(implode(', ', $tablas)) : 'ninguna' ?></td></tr>
         <tr><td>Comando del cron</td>
-            <td class="tenue">/usr/bin/php <?= esc($rutaCron) ?></td></tr>
+            <td class="tenue"><?= esc($phpDisponibles[0] ?? '/usr/bin/php') ?> <?= esc($rutaCron) ?></td></tr>
+        <tr><td>PHP que existe en el servidor</td>
+            <td class="tenue"><?= $phpDisponibles
+                 ? esc(implode(' · ', $phpDisponibles))
+                 : 'no se pudo comprobar (open_basedir)' ?><br>
+              este proceso: <?= esc(PHP_VERSION) ?> · <?= esc(php_sapi_name()) ?></td></tr>
         <tr><td>Última corrida automática</td>
             <td class="tenue"><?= $cronUltima ? esc($cronUltima) : 'todavía ninguna' ?></td></tr>
         <tr><td>Aviso por correo</td>
