@@ -17,6 +17,10 @@
 require __DIR__ . '/../acceso.php';
 acceso_exigir();
 require_once __DIR__ . '/cron/lib/dof_tc.php';
+require_once __DIR__ . '/cron/lib/migracion.php';
+
+// Bases creadas antes de que existiera este módulo: se crean las tablas solas.
+try { migrar_columnas_pendientes(); } catch (Throwable $e) { /* se dirá abajo */ }
 
 $fecha = trim((string)($_GET['fecha'] ?? ''));
 if ($fecha !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) $fecha = '';

@@ -13,12 +13,42 @@
 
 require_once __DIR__ . '/bd.php';
 
+/**
+ * Tablas que faltan. Se llama antes que nada porque una columna no se puede
+ * añadir a una tabla que no existe.
+ *
+ * El agujero que esto tapa: la puesta en marcha ejecuta esquema.sql una vez, y
+ * el botón que lo hace solo aparece mientras faltan tablas. Cuando después se
+ * añade una tabla NUEVA al esquema —pasó con dof_tipo_cambio y dof_corridas—
+ * ninguna instalación existente la crea nunca, y la pantalla que la usa muere
+ * con «Base table or view not found». Como todo el esquema es CREATE TABLE IF
+ * NOT EXISTS, volver a ejecutarlo entero es inofensivo.
+ */
+function migrar_tablas_pendientes(bool $revisarDeNuevo = false): array
+{
+    // El estático evita un SHOW TABLES por llamada. $revisarDeNuevo existe para
+    // que las pruebas puedan comprobar la función de verdad y no una imitación.
+    static $hecho = null;
+    if ($hecho !== null && !$revisarDeNuevo) return $hecho;
+
+    $esperadas = ['snapshots', 'estatus', 'eventos', 'bitacora', 'ingestas',
+                  'dof_tipo_cambio', 'dof_corridas'];
+    $hay = [];
+    foreach (bd()->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN) as $t) $hay[$t] = true;
+
+    $faltan = array_values(array_filter($esperadas, fn($t) => !isset($hay[$t])));
+    if (!$faltan) return $hecho = [];
+
+    bd_ejecutar_sql(__DIR__ . '/../esquema.sql');
+    return $hecho = ['tabla(s) creada(s): ' . implode(', ', $faltan)];
+}
+
 function migrar_columnas_pendientes(): array
 {
     static $hecho = null;
     if ($hecho !== null) return $hecho;   // una vez por petición, no más
 
-    $hizo = [];
+    $hizo = migrar_tablas_pendientes();
 
     if (bd_asegurar_columna('snapshots', 'linea_base', 'TINYINT(1) NOT NULL DEFAULT 0')) {
         $hizo[] = 'columna snapshots.linea_base';

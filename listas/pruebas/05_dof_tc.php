@@ -55,6 +55,25 @@ if (getenv('BD_HOST') === false) {
 }
 
 bd_ejecutar_sql(__DIR__ . '/../cron/esquema.sql');
+
+/* --- una tabla nueva se crea sola en una base que ya existía --------------
+   Este agujero ha mordido tres veces. La puesta en marcha ejecuta esquema.sql
+   una vez y su botón solo aparece mientras faltan tablas; cuando después se
+   añade una tabla nueva al esquema, ninguna instalación existente la crea, y
+   la pantalla que la usa muere con «Base table or view not found». Pasó en
+   producción con dof_tipo_cambio el 14/08/2026. */
+require_once __DIR__ . '/../cron/lib/migracion.php';
+bd()->exec("DROP TABLE IF EXISTS dof_corridas");
+$antes = in_array('dof_corridas', bd()->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN), true);
+comprobar('la tabla no está antes de migrar', false, $antes);
+
+$hizo = migrar_tablas_pendientes(true);   // true: no reutilizar el estático
+comprobar('y después de migrar sí está', true,
+    in_array('dof_corridas', bd()->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN), true));
+comprobar_que('y la migración dice qué creó',
+    count($hizo) === 1 && str_contains($hizo[0], 'dof_corridas'),
+    'devolvió: ' . var_export($hizo, true));
+
 bd()->exec("DELETE FROM dof_tipo_cambio WHERE fecha BETWEEN '2020-01-01' AND '2020-12-31'");
 
 /* Serie de juguete en un año que la serie real no cubre, para no pisarla.
