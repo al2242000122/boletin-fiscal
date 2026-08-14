@@ -128,6 +128,16 @@ function avisar_pendientes(?callable $log = null): array
     if ($ev)  $partes[] = count($ev) . ' movimiento(s) urgente(s)';
     $log('   aviso enviado a ' . implode(', ', $para) . ' (' . implode(' y ', $partes) . ')');
 
+    /* Queda constancia de cada envío. Sin esto, «hoy no llegó ningún correo»
+       es indistinguible de tres cosas muy distintas: que no hubiera nada que
+       avisar, que la ingesta no llegara a correr, o que el correo se perdiera.
+       El panel necesita poder decir cuál de las tres. */
+    try {
+        bd()->prepare("INSERT INTO bitacora (usuario,ip,origen,rfc_consultado,cantidad,resultado,consultado_en)
+                       VALUES ('aviso', NULL, 'aviso', NULL, ?, ?, ?)")
+            ->execute([count($ev) + count($pub), mb_substr(implode(' y ', $partes), 0, 40), $ahora]);
+    } catch (Throwable $e) { /* la constancia no puede tumbar el aviso */ }
+
     return ['enviados' => count($para), 'eventos' => count($ev),
             'publicaciones' => count($pub), 'motivo' => ''];
 }

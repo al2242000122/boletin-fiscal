@@ -474,7 +474,13 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
       $pendientes = (int)bd()->query("SELECT COUNT(*) FROM eventos e
                                       JOIN snapshots s ON s.id = e.snapshot_id
                                       WHERE e.prioridad = 2 AND s.linea_base = 0
-                                        AND e.avisado_en IS NULL")->fetchColumn(); ?>
+                                        AND e.avisado_en IS NULL")->fetchColumn();
+      $pubPendientes = (int)bd()->query("SELECT COUNT(*) FROM snapshots
+                                         WHERE linea_base = 0 AND procesado_en IS NOT NULL
+                                           AND avisado_en IS NULL")->fetchColumn();
+      $ultimoAviso = bd()->query("SELECT MAX(consultado_en) FROM bitacora
+                                  WHERE origen = 'aviso'")->fetchColumn() ?: null;
+      $porAvisar = $pendientes + $pubPendientes; ?>
       <h2 class="seccion-titulo seccion-titulo-2">Aviso por correo</h2>
       <?php if ($correos): ?>
         <p class="seccion-nota">
@@ -485,10 +491,38 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
           en el 69-B, que es lo que tiene plazo corriendo.
           Una sola carta por corrida, nada se avisa dos veces, y la carga
           inicial nunca.
-          <?php if ($pendientes): ?>
-            Hay <b><?= $pendientes ?></b> sin avisar todavía; salen en la próxima corrida.
-          <?php endif; ?>
         </p>
+
+        <?php /* Sin esto, «hoy no llegó ningún correo» no se puede interpretar:
+                 puede ser que no hubiera nada, que la ingesta no corriera o que
+                 el correo se perdiera. Aquí se ve cuál de las tres. */ ?>
+        <?php if ($porAvisar === 0): ?>
+          <div class="estado" style="margin:0 0 16px">
+            <div>
+              <b>Nada pendiente de avisar. El silencio es correcto.</b>
+              <div class="tenue">
+                <?= $ultimoAviso
+                      ? 'Último correo enviado: ' . esc(substr((string)$ultimoAviso, 0, 16)) . '.'
+                      : 'Todavía no ha salido ningún aviso.' ?>
+                No hay publicaciones nuevas ni movimientos urgentes sin avisar.
+                La carga inicial de cada lista nunca cuenta: son el punto de
+                partida, no movimiento.
+              </div>
+            </div>
+          </div>
+        <?php else: ?>
+          <div class="aviso">
+            <b>Hay <?= number_format($porAvisar) ?> cosa<?= $porAvisar === 1 ? '' : 's' ?>
+            sin avisar<?php if ($pubPendientes && $pendientes): ?>
+              (<?= $pubPendientes ?> publicación<?= $pubPendientes === 1 ? '' : 'es' ?>
+               y <?= $pendientes ?> movimiento<?= $pendientes === 1 ? '' : 's' ?> urgente<?= $pendientes === 1 ? '' : 's' ?>)<?php endif; ?>.</b><br>
+            Salen en la próxima corrida de la ingesta. Si esto se queda así
+            varios días, el correo no está saliendo o la ingesta no está
+            corriendo.
+            <?= $ultimoAviso ? 'Último enviado: ' . esc(substr((string)$ultimoAviso, 0, 16)) . '.'
+                             : 'Nunca ha salido ninguno.' ?>
+          </div>
+        <?php endif; ?>
         <form method="post">
           <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
           <input type="hidden" name="accion" value="probar_correo">
