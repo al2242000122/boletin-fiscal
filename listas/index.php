@@ -13,7 +13,24 @@ acceso_exigir();
 /* --- estado ------------------------------------------------------------- */
 $hayConfig = is_file(__DIR__ . '/../privado/config.php');
 $conecta = false; $errorBD = ''; $tablas = []; $resumen = null; $ingestas = [];
-$cronUltima = null; $alertas = 0; $hayArt69 = false;
+$cronUltima = null; $alertas = 0; $hayArt69 = false; $cob = null;
+
+/* Tamaños medidos el 13/08/2026 descargando los archivos. Solo sirven para
+   ordenar los botones de carga de menor a mayor y avisar de cuánto tarda cada
+   uno: primero entran las pequeñas, y si la más grande choca con el límite de
+   tiempo del servidor, lo demás ya está dentro. */
+const LISTA_PESO = [
+    'art69.sentencias'      => ['51 KB',   'unos segundos'],
+    'art69.entes_publicos'  => ['391 KB',  'unos segundos'],
+    'art69.exigibles'       => ['484 KB',  'unos segundos'],
+    'bis.completo'          => ['1 KB',    'instantáneo'],
+    'bis.definitivos'       => ['1 KB',    'instantáneo'],
+    'bis.sent_favorables'   => ['1 KB',    'instantáneo'],
+    'art69.no_localizados'  => ['4.4 MB',  '53 mil registros, medio minuto'],
+    'art69.csd_sin_efectos' => ['5.0 MB',  'medio minuto'],
+    'art69.firmes'          => ['20.1 MB', '264 mil registros, un minuto o más'],
+    'art69.cancelados'      => ['20.6 MB', 'la más grande, un minuto o más'],
+];
 
 /* Las instrucciones para dar de alta la tarea programada, ocultas de momento:
    enseñan la ruta absoluta del servidor y un aviso de que todavía no hay
@@ -33,6 +50,8 @@ if ($hayConfig) {
             // Bases creadas con una versión anterior: se ponen al día solas.
             require_once __DIR__ . '/cron/lib/migracion.php';
             $migrado = migrar_columnas_pendientes();
+            require_once __DIR__ . '/cron/lib/cobertura.php';
+            $cob = cobertura();
             $resumen = bd()->query("
                 SELECT lista, COUNT(*) total,
                        SUM(situacion='Presunto') presuntos,
@@ -86,6 +105,16 @@ if ($accion && hash_equals($_SESSION['token'] ?? '', $_POST['token'] ?? '')) {
             if ($p['ok']) {
                 echo "\nSi no llega en unos minutos, revisa la carpeta de correo no deseado.\n";
             }
+        } elseif ($accion === 'cargar_lista' && $hayTablas) {
+            /* Una sola lista por petición. Las del Artículo 69 son grandes
+               —Firmes son 264 368 registros medidos, 30 s en local— y meterlas
+               todas en la misma petición es lo que se lleva por delante el
+               límite de tiempo del servidor. De una en una sí entra. */
+            require_once __DIR__ . '/cron/lib/ingestor.php';
+            $cual = (string)($_POST['lista'] ?? '');
+            if (!isset(FUENTES_CATALOGO[$cual])) throw new RuntimeException('Lista desconocida.');
+            $r = ingestar(['lista' => $cual], false, function ($l) { echo "$l\n"; });
+            echo "\n" . ($r['errores'] ? "Terminado con {$r['errores']} fallo(s)." : "Terminado.") . "\n";
         } elseif ($accion === 'actualizar' && $hayTablas) {
             // Solo 69-B desde la web: entra en el tiempo que da el servidor.
             // Las listas grandes del Art. 69 las trae el cron, sin ese límite.
@@ -281,6 +310,47 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
     <?php if ($salida): ?>
       <h2 class="seccion-titulo seccion-titulo-2">Resultado de la última acción</h2>
       <pre class="salida"><?= esc(trim($salida)) ?></pre>
+    <?php endif; ?>
+
+    <?php /* ---- listas del catálogo que aún no se han traído ---- */ ?>
+    <?php if ($listo && $cob && !$cob['completa']):
+      // De menor a mayor: si la más grande choca con el límite de tiempo del
+      // servidor, todo lo demás ya quedó cargado.
+      $porCargar = array_filter($cob['listas'], fn($l) => !$l['cargada']);
+      uksort($porCargar, fn($a, $b) => array_search($a, array_keys(LISTA_PESO), true)
+                                   <=> array_search($b, array_keys(LISTA_PESO), true)); ?>
+      <h2 class="seccion-titulo seccion-titulo-2">Listas que faltan por traer</h2>
+      <div class="alerta">
+        <b>Faltan <?= count($porCargar) ?> de <?= count($cob['listas']) ?> listas:
+          <?= esc(cobertura_articulos_texto($cob['articulos_incompletos'])) ?>.</b><br>
+        Mientras falten, una consulta que diga «no aparece» solo quiere decir que
+        no aparece en lo que sí está cargado. Trae las que necesites de una en
+        una, empezando por arriba.
+      </div>
+      <table class="datos">
+        <tr><th>Lista</th><th>Archivo</th><th>Qué esperar</th><th></th></tr>
+        <?php foreach ($porCargar as $clave => $l):
+          [$peso, $espera] = LISTA_PESO[$clave] ?? ['—', '—']; ?>
+          <tr>
+            <td><?= esc($l['etiqueta']) ?></td>
+            <td class="tenue"><?= esc($peso) ?></td>
+            <td class="tenue"><?= esc($espera) ?></td>
+            <td>
+              <form method="post" style="margin:0">
+                <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+                <input type="hidden" name="accion" value="cargar_lista">
+                <input type="hidden" name="lista" value="<?= esc($clave) ?>">
+                <button class="btn-accion" style="padding:7px 14px;font-size:13px">Traer</button>
+              </form>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+      <p class="seccion-nota" style="margin-top:12px">
+        Cada botón trae una sola lista y la página se queda esperando hasta que
+        termina. Si alguna se corta por tiempo, vuelve a pulsarla: no se duplica
+        nada, y si el archivo no cambió ni siquiera lo reprocesa.
+      </p>
     <?php endif; ?>
 
     <?php if ($resumen): ?>

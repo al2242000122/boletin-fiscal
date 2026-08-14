@@ -24,6 +24,42 @@ const CSV_SAT_MAX_PREAMBULO = 10;   // margen: hoy son 2, no confiamos en que si
 /* ------------------------------------------------------------------ apertura */
 
 /**
+ * Convierte windows-1252 a UTF-8 mientras se lee, sin abortar nunca.
+ *
+ * Aquí estaba el peor fallo que ha tenido esta herramienta. Antes se usaba
+ * `convert.iconv.windows-1252/utf-8//TRANSLIT` con un comentario que afirmaba
+ * que //TRANSLIT impedía que un byte raro tumbara la conversión. Es falso, y
+ * está medido el 13/08/2026: el archivo CSDsinefectos.csv trae **un** byte 0x8D
+ * —posición sin asignar en windows-1252— dentro de un nombre, al 6% del
+ * archivo. iconv se detiene ahí. El resultado no era un error: eran 3 542 filas
+ * leídas de 60 001, y las otras 56 459 desaparecían sin una sola advertencia.
+ * Un contribuyente con el certificado sin efectos contestaba «no aparece».
+ *
+ * mb_convert_encoding sustituye lo que no reconoce en lugar de abortar. Se usa
+ * un filtro propio para no perder la lectura en flujo: los archivos grandes son
+ * de 20 MB y no caben cómodamente en memoria.
+ *
+ * Convertir trozo a trozo es seguro porque windows-1252 gasta exactamente un
+ * byte por carácter: ninguno puede quedar partido entre dos trozos. Con una
+ * codificación multibyte de origen esto no valdría.
+ */
+class CsvSatFiltro1252 extends php_user_filter
+{
+    public function filter($entrada, $salida, &$consumido, $cerrando): int
+    {
+        while ($cubo = stream_bucket_make_writeable($entrada)) {
+            $largoEntrada  = $cubo->datalen;   // antes de convertir: la conversión alarga
+            $cubo->data    = mb_convert_encoding($cubo->data, 'UTF-8', 'Windows-1252');
+            $cubo->datalen = strlen($cubo->data);
+            $consumido    += $largoEntrada;
+            stream_bucket_append($salida, $cubo);
+        }
+        return PSFS_PASS_ON;
+    }
+}
+stream_filter_register('sat.1252', 'CsvSatFiltro1252');
+
+/**
  * Abre un CSV del SAT convirtiendo windows-1252 a UTF-8 al vuelo.
  * Devuelve un recurso listo para fgetcsv, o null si no se pudo abrir.
  */
@@ -31,9 +67,7 @@ function csv_sat_abrir(string $ruta)
 {
     $h = @fopen($ruta, 'r');
     if (!$h) return null;
-    // Filtro de flujo: convierte mientras lee, sin materializar el archivo.
-    // //TRANSLIT evita que un byte suelto raro aborte la conversión entera.
-    @stream_filter_append($h, 'convert.iconv.windows-1252/utf-8//TRANSLIT', STREAM_FILTER_READ);
+    @stream_filter_append($h, 'sat.1252', STREAM_FILTER_READ);
     return $h;
 }
 
@@ -155,11 +189,50 @@ function csv_sat_rfc(?string $v): array
  */
 function csv_sat_filas($h, string $familia, array $columnas): Generator
 {
-    $idx = array_change_key_case(array_flip(array_map('strval', $columnas)), CASE_LOWER);
-    $col = function (array $fila, array $nombres) use ($idx) {
+    /* Los siete archivos del Artículo 69 NO comparten encabezado, aunque la
+       documentación del SAT los presente como si sí. Medido el 13/08/2026:
+
+         firmes · no_localizados · exigibles   RFC, RAZON SOCIAL, TIPO PERSONA,
+                                               SUPUESTO, FECHA…, ENTIDAD FEDERATIVA
+         sentencias                            igual, pero «RAZÓN SOCIAL» con tilde
+         cancelados                            8 columnas: añade FECHA DE
+                                               CANCELACION y MONTO
+         entes_publicos                        sin TIPO PERSONA; añade EJERCICIO
+                                               y PERIODO
+         csd_sin_efectos                       «NOMBRE O RAZON SOCIAL» y
+                                               «SUPUESTO DE CANCELACION CSD»;
+                                               ni TIPO PERSONA ni ENTIDAD
+
+       Con la comparación exacta que había antes, «RAZÓN SOCIAL» no casaba con
+       «RAZON SOCIAL» y «NOMBRE O RAZON SOCIAL» tampoco: 572 filas de Sentencias
+       y 3 520 de CSD se guardaban sin nombre, y las de CSD además sin supuesto.
+       Se comparan sin acentos y admitiendo variantes. */
+    $normal = function (string $s): string {
+        return strtr(mb_strtoupper(trim($s), 'UTF-8'),
+                     ['Á'=>'A','É'=>'E','Í'=>'I','Ó'=>'O','Ú'=>'U','Ü'=>'U']);
+    };
+
+    $idx = [];
+    foreach ($columnas as $i => $c) $idx[$normal((string)$c)] = $i;
+
+    $col = function (array $fila, array $nombres) use ($idx, $normal) {
         foreach ($nombres as $n) {
-            $k = mb_strtolower($n, 'UTF-8');
+            $k = $normal($n);
             if (isset($idx[$k]) && isset($fila[$idx[$k]])) return trim((string)$fila[$idx[$k]]);
+        }
+        return '';
+    };
+
+    /* Red de seguridad para el nombre, que es lo que hace legible un hallazgo:
+       si ninguna variante conocida casa, vale cualquier columna cuyo título
+       hable de nombre o razón social. Solo se aplica al nombre: en los demás
+       campos un acierto por aproximación sería peor que un hueco. */
+    $colNombre = function (array $fila) use ($idx, $col) {
+        $v = $col($fila, ['Nombre del Contribuyente', 'RAZON SOCIAL', 'NOMBRE O RAZON SOCIAL']);
+        if ($v !== '') return $v;
+        foreach ($idx as $titulo => $i) {
+            if ((str_contains($titulo, 'RAZON SOCIAL') || str_contains($titulo, 'NOMBRE'))
+                && isset($fila[$i])) return trim((string)$fila[$i]);
         }
         return '';
     };
@@ -178,7 +251,7 @@ function csv_sat_filas($h, string $familia, array $columnas): Generator
             'rfc_valido'   => $rfc['valido'],
             'rfc_motivo'   => $rfc['motivo'],
             'tipo_persona' => $rfc['tipo'],
-            'nombre'       => $col($fila, ['Nombre del Contribuyente', 'RAZON SOCIAL']),
+            'nombre'       => $colNombre($fila),
             'situacion'    => null,
             'supuesto'     => null,
             'entidad'      => null,
@@ -187,9 +260,10 @@ function csv_sat_filas($h, string $familia, array $columnas): Generator
         ];
 
         if ($familia === 'art69') {
-            $reg['supuesto'] = $col($fila, ['SUPUESTO']);
+            $reg['supuesto'] = $col($fila, ['SUPUESTO', 'SUPUESTO DE CANCELACION CSD']);
             $reg['entidad']  = $col($fila, ['ENTIDAD FEDERATIVA']);
-            $reg['fecha_primera_publicacion'] = csv_sat_fecha($col($fila, ['FECHA DE PRIMERA PUBLICACION']));
+            $reg['fecha_primera_publicacion'] = csv_sat_fecha($col($fila,
+                ['FECHA DE PRIMERA PUBLICACION', 'FECHAS DE PRIMERA PUBLICACION', 'FECHA DE PUBLICACION']));
             // el archivo trae su propio TIPO PERSONA; si está, manda sobre la longitud
             $tp = strtoupper($col($fila, ['TIPO PERSONA']));
             if ($tp === 'M' || $tp === 'F') $reg['tipo_persona'] = $tp;

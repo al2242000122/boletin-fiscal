@@ -132,32 +132,88 @@ la del servidor, y hay que decirlo así en la constancia.
 | delimitador | coma |
 | entrecomillado | comillas dobles, con comas dentro de los campos |
 | saltos de línea dentro de campo | **sí**, ver §6 |
+| bytes sin asignar en windows-1252 | **sí**, ver abajo |
 
 `fgetcsv` de PHP lee registros completos respetando comillas y saltos internos.
 Verificado. Un parser línea a línea rompe.
+
+### No convertir la codificación con iconv
+
+`CSDsinefectos.csv` trae **un** byte `0x8D` —posición sin asignar en
+windows-1252— dentro de un nombre, al 6 % del archivo:
+
+```
+"DIESS DESARROLLO, INGENIERÍA<0x8D> Y ESTRATEGIA DE SISTEMAS
+```
+
+Con `convert.iconv.windows-1252/utf-8//TRANSLIT`, que es lo que se usaba, iconv
+**se detiene ahí**. No lanza excepción ni devuelve error: la lectura termina y
+ya está. Medido: **3 542 filas leídas de 60 001**. Las otras 56 459 desaparecían
+sin una sola advertencia, y un contribuyente con el certificado sin efectos
+contestaba «no aparece».
+
+`//IGNORE` sí lee el archivo entero, pero su comportamiento depende de la
+versión de libiconv del servidor. Se usa un filtro de flujo propio con
+`mb_convert_encoding`, que sustituye lo que no reconoce en lugar de abortar.
+Convertir por trozos es seguro porque windows-1252 gasta un byte por carácter y
+ninguno puede quedar partido entre dos trozos.
+
+Hay una prueba que lo fija: `listas/pruebas/casos/byte_invalido.csv`.
 
 ---
 
 ## 5. Esquema por familia
 
-### Artículo 69 — 6 columnas, sin preámbulo
+### Artículo 69 — sin preámbulo, pero **NO un solo esquema**
 
-Header en la línea 0.
+Header en la línea 0. El esquema base es este:
 
 ```
 RFC, RAZON SOCIAL, TIPO PERSONA, SUPUESTO, FECHA DE PRIMERA PUBLICACION, ENTIDAD FEDERATIVA
 ```
 
-Ejemplo real:
-
 ```
 AAG090703QT6,APLICA AGUASCALIENTES SA DE CV,M,FIRMES,01/01/2014,CIUDAD DE MEXICO
 ```
 
+> **Corrección del 13/08/2026.** Este documento decía que las siete listas del
+> Artículo 69 compartían ese encabezado. **Es falso.** Leídos los siete archivos
+> uno por uno:
+
+| lista | columnas | en qué se aparta |
+|---|---|---|
+| `firmes`, `no_localizados`, `exigibles` | 6 | el esquema base |
+| `sentencias` | 6 | **`RAZÓN SOCIAL` con tilde**, y `FECHAS DE PRIMERA PUBLICACION` en plural |
+| `cancelados` | **8** | añade `FECHA DE CANCELACION` y `MONTO`; la fecha se llama `FECHA DE PUBLICACION` |
+| `entes_publicos` | 6 | **sin `TIPO PERSONA`**; añade `EJERCICIO` y `PERIODO` |
+| `csd_sin_efectos` | 6 | **`NOMBRE O RAZON SOCIAL`**, **`SUPUESTO DE CANCELACION CSD`**, sin `TIPO PERSONA` y sin `ENTIDAD FEDERATIVA` |
+
+> Comparando los títulos de columna letra a letra —que es lo que se hacía—, 572
+> filas de Sentencias y 3 520 de CSD se guardaban **sin nombre**, y las de CSD
+> además sin supuesto. Hay que comparar sin acentos y admitiendo variantes.
+
 - `TIPO PERSONA`: `M` (moral) o `F` (física). Medido en muestra de Firmes:
-  1 365 morales, 624 físicas, 1 vacía.
-- `SUPUESTO`: coincide con el nombre de la lista (`FIRMES`, `NO LOCALIZADOS`…).
+  1 365 morales, 624 físicas, 1 vacía. Dos listas no traen la columna: ahí se
+  deduce de la longitud del RFC.
+- `SUPUESTO`: en casi todas coincide con el nombre de la lista (`FIRMES`,
+  `NO LOCALIZADOS`…). En `csd_sin_efectos` son fracciones: `FRACCION X`, etc.
 - Fechas en `DD/MM/AAAA`.
+
+### El mismo RFC se repite dentro de un archivo
+
+Medido el 13/08/2026. No es un error del archivo: son créditos o periodos
+distintos del mismo contribuyente.
+
+| lista | filas | RFC distintos | repetidos |
+|---|---|---|---|
+| `cancelados` | 184 852 | 182 312 | 2 525 |
+| `entes_publicos` | 4 008 | 597 | 3 411 |
+| `sentencias` | 610 | 572 | 38 |
+| `csd_sin_efectos` | 60 000 | 59 302 | 698 |
+
+Para responder «¿aparece en esta lista?» basta una fila por RFC, que es lo que
+se guarda. Pero el conteo de filas del archivo **no** es el número de
+contribuyentes, y decir «cargados 184 852» sería falso.
 
 ### Artículo 69-B — 20 columnas, **2 líneas de preámbulo**
 
@@ -285,13 +341,32 @@ cual y, si hace falta, extraer la fecha aparte.
 
 ## 7. Volumen para dimensionar
 
-- 69-B completo: **14 523 filas**
-- 69-B presuntos: **754 filas**
-- Firmes: 20 MB ≈ 250 000 filas estimadas
-- Cancelados: 20.6 MB, orden similar
+Ya no son estimaciones: las quince listas se cargaron el 13/08/2026 y esto es
+lo que hay en la base.
 
-Total esperado por debajo del millón de filas. MySQL con índice en RFC lo
-resuelve sin esfuerzo; no hace falta Postgres.
+| lista | contribuyentes |
+|---|---|
+| `art69.firmes` | 264 368 |
+| `art69.cancelados` | 182 312 |
+| `art69.csd_sin_efectos` | 59 302 |
+| `art69.no_localizados` | 53 422 |
+| `art69.exigibles` | 5 785 |
+| `art69.entes_publicos` | 597 |
+| `art69.sentencias` | 572 |
+| `art69b.completo` | 14 432 |
+| `art69b.definitivos` | 11 698 |
+| `art69b.sent_favorables` | 1 655 |
+| `art69b.presuntos` | 739 |
+| `art69b.desvirtuados` | 340 |
+| `bis.*` (las tres juntas) | 6 |
+| **total** | **595 228** |
+
+**Coste medido:** 441 MB de base de datos, de los cuales cerca de la mitad son
+la tabla `eventos` con un evento por registro de la carga inicial que nunca se
+va a mostrar. Tiempo de ingesta de todo: unos 80 segundos en local; la más
+grande, Firmes, 30,7 s con 2 MB de memoria, porque se lee en flujo.
+
+MySQL con índice en RFC lo resuelve sin esfuerzo; no hace falta Postgres.
 
 ---
 

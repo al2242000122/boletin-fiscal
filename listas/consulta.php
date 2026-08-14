@@ -16,6 +16,7 @@ require __DIR__ . '/../acceso.php';
 acceso_exigir();
 require_once __DIR__ . '/cron/lib/bd.php';
 require_once __DIR__ . '/cron/lib/csv_sat.php';
+require_once __DIR__ . '/cron/lib/cobertura.php';
 
 $rfcBuscado = trim((string)($_GET['rfc'] ?? ''));
 $fSituacion = (string)($_GET['situacion'] ?? '');
@@ -235,8 +236,16 @@ function url(array $cambios = []): string
           <?php if ($hay): ?>
             <b>Aparece en los listados publicados por el SAT.</b>
             <?= count($resultado) ?> expediente<?= count($resultado) > 1 ? 's' : '' ?> vigente<?= count($resultado) > 1 ? 's' : '' ?>.
-          <?php else: ?>
-            <b>No aparece en la versión de los archivos que tenemos cargada.</b>
+          <?php else: $cob = cobertura(); $cub = cobertura_articulos_cubiertos(); ?>
+            <?php if ($cob['completa']): ?>
+              <b>No aparece en la versión de los archivos que tenemos cargada.</b>
+            <?php else: ?>
+              <b>No aparece en <?= $cub ? esc(cobertura_articulos_texto($cub)) : 'ninguna lista cargada' ?>.</b>
+              <?= esc(cobertura_articulos_texto($cob['articulos_incompletos'])) ?>
+              todavía no está<?= count($cob['articulos_incompletos']) > 1 ? 'n' : '' ?>
+              cargado<?= count($cob['articulos_incompletos']) > 1 ? 's' : '' ?>,
+              así que sobre eso esta consulta no dice nada.
+            <?php endif; ?>
             Esto no certifica que el contribuyente esté libre de cualquier
             supuesto: solo dice que no figura en los archivos consultados, con la
             fecha que se indica abajo.

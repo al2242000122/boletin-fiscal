@@ -171,8 +171,20 @@ function ingerir(string $clave, array $lista, bool $forzar, callable $log): arra
     bd()->commit();
     fclose($h);
     unlink($tmp);
-    $log(sprintf('   filas %s · cargadas %s · suprimidas %d · descartadas %d',
-                 number_format($filas), number_format($validas), $suprimidas, $descartadas));
+
+    /* Lo que de verdad entró, no lo que se intentó. La tabla de trabajo tiene
+       clave (rfc, proc_hash) y se inserta con INSERT IGNORE, así que un RFC
+       repetido en el mismo archivo se queda en uno solo. No es raro: medido en
+       Cancelados el 13/08/2026, 184 852 filas contenían 182 312 RFC distintos
+       —2 525 repetidos, uno de ellos tres veces—. Quedarse con uno es lo
+       correcto para responder «¿aparece en esta lista?», pero decir que se
+       cargaron 184 852 sería falso. */
+    $enCarga   = (int)bd()->query("SELECT COUNT(*) FROM carga")->fetchColumn();
+    $repetidas = $validas - $enCarga;
+    $log(sprintf('   filas %s · cargadas %s · suprimidas %d · descartadas %d%s',
+                 number_format($filas), number_format($enCarga), $suprimidas, $descartadas,
+                 $repetidas > 0 ? ' · repetidas en el archivo ' . number_format($repetidas) : ''));
+    $validas = $enCarga;
 
     /* --- diferencias -----------------------------------------------------
        Si la lista no tenía nada cargado, esto es la línea base: todo entraría
@@ -282,6 +294,22 @@ function aplicar_diferencias(string $lista, int $snapshotId, string $fecha): arr
                ON e.rfc = c.rfc AND e.proc_hash = c.proc_hash AND e.lista = ? AND e.vigente = 1
         WHERE e.id IS NULL
     ")->execute([$lista, $fecha, $snapshotId, $lista]);
+
+    /* 6. Refrescar en su sitio los datos que no son noticia.
+          El paso 1 compara solo situación y supuesto, y eso está bien: que el
+          SAT corrija una razón social no es un movimiento del que avisar. Pero
+          si no se copia el valor nuevo, la fila se queda con el viejo para
+          siempre. Se vio con Sentencias: al arreglar la lectura del encabezado
+          «RAZÓN SOCIAL» con tilde, las 572 filas seguían sin nombre porque
+          ningún evento las tocaba. Se actualiza sin generar evento. */
+    bd()->prepare("
+        UPDATE estatus e
+        JOIN carga c ON c.rfc = e.rfc AND c.proc_hash = e.proc_hash
+        SET e.nombre = c.nombre, e.entidad = c.entidad,
+            e.proc_texto = c.proc_texto, e.datos = c.datos
+        WHERE e.lista = ? AND e.vigente = 1
+          AND NOT (e.nombre <=> c.nombre AND e.entidad <=> c.entidad)
+    ")->execute([$lista]);
 
     $urg = bd()->prepare("SELECT COUNT(*) FROM eventos WHERE snapshot_id = ? AND prioridad = 2");
     $urg->execute([$snapshotId]);

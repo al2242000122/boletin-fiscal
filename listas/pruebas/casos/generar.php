@@ -94,6 +94,25 @@ escribir("$destino/bis_fila_partida.csv", [
     '3,BBB020202BBB,TERCERA EMPRESA,Sentencia Favorable,,,,,900-04-2024-81 de 26 de enero de 2024,26/01/2024,,',
 ]);
 
+/* ---- byte suelto que rompía la conversión -----------------------------
+   Reproduce CSDsinefectos.csv: un byte 0x8D —posición sin asignar en
+   windows-1252— dentro de un nombre, en la fila 2. Con el filtro de iconv que
+   se usaba antes, la lectura se detenía ahí y las filas siguientes
+   desaparecían sin aviso: 3 542 leídas de 60 001 en el archivo real. */
+$conByteMalo = [
+    'RFC,NOMBRE O RAZON SOCIAL,SUPUESTO DE CANCELACION,FECHA DE CANCELACION,ADMINISTRACION,FECHA DE PUBLICACION',
+    'AAA010101AAA,PRIMERA EMPRESA SA DE CV,CANCELACION,01/01/2020,CENTRAL,15/01/2020',
+    'BBB020202BBB,DIESS DESARROLLO INGENIERIA' . "\x8D" . ' Y ESTRATEGIA,CANCELACION,02/02/2020,CENTRAL,15/02/2020',
+    'CCC030303CCC,TERCERA EMPRESA SA DE CV,CANCELACION,03/03/2020,CENTRAL,15/03/2020',
+    'DDD040404DDD,CUARTA EMPRESA SA DE CV,CANCELACION,04/04/2020,CENTRAL,15/04/2020',
+    'ÑAÑ050505EEE,QUINTA ÑOÑA SA DE CV,CANCELACION,05/05/2020,CENTRAL,15/05/2020',
+];
+// Se escribe a mano: el 0x8D ya está puesto como byte y no debe pasar por la
+// conversión a windows-1252, que lo convertiría en otra cosa.
+$txt = mb_convert_encoding(implode("\r\n", $conByteMalo) . "\r\n", 'Windows-1252', 'UTF-8');
+file_put_contents("$destino/byte_invalido.csv", $txt);
+echo "byte_invalido.csv  ", filesize("$destino/byte_invalido.csv"), " bytes\n";
+
 /* ---- Artículo 69: 6 columnas, sin preámbulo --------------------------- */
 escribir("$destino/art69_muestra.csv", [
     'RFC,RAZON SOCIAL,TIPO PERSONA,SUPUESTO,FECHA DE PRIMERA PUBLICACION,ENTIDAD FEDERATIVA',

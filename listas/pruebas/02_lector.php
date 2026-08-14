@@ -70,6 +70,21 @@ comprobar_que('los acentos del nombre también',
           'nombre leído: ' . var_export($m['filas'][1]['nombre'], true));
 comprobar('el RFC con guiones se normaliza al leer', 'AAA080808HL8', $m['filas'][6]['rfc']);
 
+/* --- un byte inválido no puede cortar la lectura -----------------------
+   El caso real que lo destapó: CSDsinefectos.csv trae un byte 0x8D —posición
+   sin asignar en windows-1252— dentro de un nombre, al 6% del archivo. Con el
+   filtro de iconv que se usaba antes, la lectura se paraba ahí: 3 542 filas de
+   60 001, y las otras 56 459 desaparecían sin una sola advertencia. Un
+   contribuyente con el certificado sin efectos contestaba «no aparece». */
+$b = leer_caso('byte_invalido.csv', 'art69');
+comprobar('un byte inválido no corta la lectura', 5, count($b['filas']));
+comprobar_que('las filas posteriores al byte malo siguen ahí',
+    ($b['filas'][4]['rfc'] ?? '') === 'ÑAÑ050505EEE',
+    'última fila leída: ' . var_export($b['filas'][count($b['filas'])-1]['rfc'] ?? null, true));
+comprobar_que('la fila del byte malo se lee, con el nombre saneado',
+    str_contains($b['filas'][1]['nombre'] ?? '', 'DIESS DESARROLLO'),
+    'nombre leído: ' . var_export($b['filas'][1]['nombre'] ?? null, true));
+
 /* --- fecha del preámbulo ----------------------------------------------
    Es la fecha que vale para las constancias. El Last-Modified del servidor
    puede ir semanas por delante: medido, 17 días. */

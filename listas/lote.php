@@ -31,6 +31,7 @@ acceso_exigir();
 require_once __DIR__ . '/cron/lib/bd.php';
 require_once __DIR__ . '/cron/lib/csv_sat.php';
 require_once __DIR__ . '/cron/lib/fuentes.php';   // solo por FUENTES_CATALOGO
+require_once __DIR__ . '/cron/lib/cobertura.php';
 
 const LOTE_TOPE       = 5000;               // RFC por lote
 const LOTE_TROZO      = 500;                // marcadores por sentencia
@@ -89,15 +90,47 @@ function lote_clasificar(array $f): array
     // a minúsculas y se sube solo la inicial: en español, "No localizados", no
     // "No Localizados", que es como lo dejaría MB_CASE_TITLE.
     $sup = trim((string)$f['supuesto']);
-    $sup = $sup !== '' ? mb_strtoupper(mb_substr($sup, 0, 1, 'UTF-8'), 'UTF-8')
-                       . mb_strtolower(mb_substr($sup, 1, null, 'UTF-8'), 'UTF-8') : '';
+    if ($sup !== '') {
+        $sup = mb_strtoupper(mb_substr($sup, 0, 1, 'UTF-8'), 'UTF-8')
+             . mb_strtolower(mb_substr($sup, 1, null, 'UTF-8'), 'UTF-8');
+        // Los supuestos del CSD son «FRACCION X», «FRACCION IV»… y el número
+        // romano no es una palabra: en minúscula queda «Fraccion x», que en un
+        // papel de trabajo se lee como una errata.
+        $sup = preg_replace_callback('/\b(?:i{1,3}|iv|vi{0,3}|ix|x{1,3}|xi{1,3}|xiv|xv)\b/u',
+                                     fn($m) => mb_strtoupper($m[0], 'UTF-8'), $sup);
+    }
     return ['gravedad' => 4, 'clave' => 'art69',
             'etiqueta' => $sup !== '' ? $sup : 'Artículo 69',
             'resumen'  => 'Aparece en los listados del artículo 69.'];
 }
 
-const LOTE_NO_APARECE = ['gravedad' => 6, 'clave' => 'no_aparece', 'etiqueta' => 'No aparece',
-                         'resumen'  => 'No fue localizado en ninguno de los listados cargados.'];
+/**
+ * El veredicto negativo, redactado según lo que de verdad se consultó.
+ *
+ * No es una constante porque su valor depende de la cobertura: mientras falten
+ * listas por cargar, «No aparece» a secas es una afirmación más ancha que los
+ * datos que la respaldan. La etiqueta viaja también al CSV, que es lo que se
+ * pega en el papel de trabajo y sobrevive a la pantalla.
+ */
+function lote_no_aparece(): array
+{
+    static $v = null;
+    if ($v !== null) return $v;
+
+    $cob = cobertura();
+    if ($cob['completa']) {
+        return $v = ['gravedad' => 6, 'clave' => 'no_aparece', 'etiqueta' => 'No aparece',
+                     'resumen'  => 'No fue localizado en los listados del 69, 69-B ni 69-B Bis.'];
+    }
+    $cubiertos = cobertura_articulos_cubiertos();
+    $texto = $cubiertos ? cobertura_articulos_texto($cubiertos) : 'ninguna lista';
+    return $v = [
+        'gravedad' => 6, 'clave' => 'no_aparece',
+        'etiqueta' => 'No aparece en ' . $texto,
+        'resumen'  => 'No fue localizado en ' . $texto . '. El resto de los listados '
+                    . 'todavía no está cargado, así que sobre ellos no se afirma nada.',
+    ];
+}
 
 /* ==========================================================================
    Entrada
@@ -312,7 +345,7 @@ if ($procesado) {
 
     /* --- consultar y agrupar por RFC ----------------------------------- */
     foreach ($validos as $r) $porRfc[$r] = ['rfc' => $r, 'nombre' => '', 'apariciones' => [],
-                                            'veredicto' => LOTE_NO_APARECE];
+                                            'veredicto' => lote_no_aparece()];
 
     foreach (lote_consultar($validos) as $f) {
         $r = $f['rfc'];
@@ -390,7 +423,11 @@ if ($procesado && $accion === 'csv') {
     $ahora = date('Y-m-d H:i:s');
     foreach (array_merge($ordenados, $sinHallazgo) as $reg) {
         if (!$reg['apariciones']) {
-            fputcsv($sal, [$reg['rfc'], '', 'No aparece', '', '', '', '', '', '', '', '', $ahora],
+            // La misma etiqueta que en pantalla: si falta cobertura, el CSV lo
+            // dice. Es el archivo que acaba pegado en el papel de trabajo y
+            // sobrevive a la pantalla donde salía el aviso.
+            fputcsv($sal, [$reg['rfc'], '', $reg['veredicto']['etiqueta'],
+                           '', '', '', '', '', '', '', '', $ahora],
                     ',', '"', '\\');
             continue;
         }
@@ -514,6 +551,26 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
 
     <?php if ($aviso): ?><div class="aviso"><?= esc($aviso) ?></div><?php endif; ?>
 
+    <?php /* ---- cobertura ----
+         Va arriba y en rojo a propósito. Un negativo solo vale lo que vale la
+         cobertura, y aquí lo que se consulta es la cartera de clientes del
+         despacho: leer «no aparece» creyendo que se han mirado los tres
+         artículos cuando solo se ha mirado uno es peor que no consultar. */ ?>
+    <?php $cob = cobertura(); if (!$cob['completa']):
+      $cubiertos = cobertura_articulos_cubiertos(); ?>
+      <div class="alerta">
+        <b>Esta consulta no cubre los tres artículos.</b><br>
+        Falta<?= count($cob['articulos_incompletos']) > 1 ? 'n' : '' ?> por cargar
+        <b><?= esc(cobertura_articulos_texto($cob['articulos_incompletos'])) ?></b>
+        (<?= count($cob['faltan']) ?> de <?= count($cob['listas']) ?> listas del catálogo).
+        Aquí un «no aparece» significa
+        <?= $cubiertos
+              ? 'únicamente <b>que no aparece en ' . esc(cobertura_articulos_texto($cubiertos)) . '</b>'
+              : '<b>que no se consultó ninguna lista</b>' ?>.
+        Se cargan desde <a href="index.php">Administración</a>, una por una.
+      </div>
+    <?php endif; ?>
+
     <form class="caja" method="post" action="lote.php" enctype="multipart/form-data">
       <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
       <input type="hidden" name="accion" value="consultar">
@@ -604,7 +661,10 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
         <details class="plegable">
           <summary><?= number_format(count($sinHallazgo)) ?>
             <?= count($sinHallazgo) === 1 ? 'RFC no fue localizado' : 'RFC no fueron localizados' ?>
-            en ninguno de los listados cargados — ver <?= count($sinHallazgo) === 1 ? 'cuál' : 'cuáles' ?></summary>
+            en <?php $cub = cobertura_articulos_cubiertos();
+                echo $cob['completa'] ? 'ninguno de los tres artículos'
+                   : ($cub ? esc(cobertura_articulos_texto($cub)) : 'ninguna lista cargada'); ?>
+            — ver <?= count($sinHallazgo) === 1 ? 'cuál' : 'cuáles' ?></summary>
           <div class="rejilla-rfc">
             <?php foreach ($sinHallazgo as $reg): ?><span><?= esc($reg['rfc']) ?></span><?php endforeach; ?>
           </div>
@@ -665,6 +725,12 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
         aparece arriba, con la fecha de cada una. Un RFC que no figura
         <b>no queda certificado como libre de cualquier supuesto</b>: solo consta
         que no fue localizado en esos archivos.
+        <?php if (!$cob['completa']): ?>
+          En esta consulta, además, <b>no se miró
+          <?= esc(cobertura_articulos_texto($cob['articulos_incompletos'])) ?></b>,
+          porque <?= count($cob['faltan']) ?> de <?= count($cob['listas']) ?> listas
+          del catálogo todavía no están cargadas.
+        <?php endif; ?>
         <?php if ($folio): ?>
           Consulta registrada en la bitácora con folio <b>L-<?= str_pad((string)$folio, 6, '0', STR_PAD_LEFT) ?></b>
           el <?= esc(date('d/m/Y')) ?> a las <?= esc(date('H:i')) ?> h.
