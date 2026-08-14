@@ -132,15 +132,10 @@ if ($accion && hash_equals($_SESSION['token'] ?? '', $_POST['token'] ?? '')) {
                días desde 2021 en 320 KB y un par de segundos, así que esto sí
                entra por web sin acercarse al límite de tiempo. */
             require_once __DIR__ . '/cron/lib/dof_tc.php';
-            $d = dof_tc_descargar('01/01/2021', date('d/m/Y'));
-            if ($d['error'] !== '') throw new RuntimeException($d['error']);
-            $n = dof_tc_guardar($d['filas']);
-            dof_tc_registrar_corrida('01/01/2021', date('d/m/Y'), count($d['filas']), $n,
-                $d['fuera_rango'], $d['filas'] ? end($d['filas'])['fecha'] : null,
-                (bool)$d['filas'], 'serie completa desde el panel');
-            printf("Serie del tipo de cambio: %s días leídos, %s nuevos.\n",
-                   number_format(count($d['filas'])), number_format($n));
-            if ($d['filas']) echo "Último publicado: " . end($d['filas'])['fecha'] . "\n";
+            $r = dof_tc_traer_serie(2021);
+            if (!$r['ok']) throw new RuntimeException($r['motivo'] ?: 'el DOF no devolvió ninguna fila');
+            printf("Serie del tipo de cambio: %s días leídos, %s nuevos.\nÚltimo publicado: %s\n",
+                   number_format($r['leidas']), number_format($r['nuevas']), $r['ultima']);
         } elseif ($accion === 'dof_sync' && $hayTablas) {
             require_once __DIR__ . '/cron/lib/dof_tc.php';
             dof_tc_sincronizar(15, function ($l) { echo "$l\n"; });

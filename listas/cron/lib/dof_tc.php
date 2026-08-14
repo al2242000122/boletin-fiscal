@@ -201,6 +201,37 @@ function dof_tc_registrar_corrida(string $desde, string $hasta, int $leidas, int
     } catch (Throwable $e) { /* la constancia no puede tumbar la sincronización */ }
 }
 
+/**
+ * Trae la serie entera de una vez. Es lo que hace falta la primera vez y
+ * ninguna más.
+ *
+ * Vive aquí, y no dentro de una pantalla, porque lo llaman dos: el panel y la
+ * propia pantalla de consulta, que es donde uno descubre que la serie falta.
+ *
+ * Cabe de sobra en una petición web: medido, 1,414 días desde enero de 2021
+ * son 320 KB y unos 5 segundos. Las listas del Artículo 69, para comparar, son
+ * 20 MB cada una.
+ */
+function dof_tc_traer_serie(int $desdeAnio = 2021): array
+{
+    $desde = "01/01/$desdeAnio";
+    $hasta = date('d/m/Y');
+
+    $d = dof_tc_descargar($desde, $hasta);
+    if ($d['error'] !== '') {
+        dof_tc_registrar_corrida($desde, $hasta, 0, 0, 0, null, false, $d['error']);
+        return ['ok' => false, 'leidas' => 0, 'nuevas' => 0, 'motivo' => $d['error']];
+    }
+
+    $n = dof_tc_guardar($d['filas']);
+    $ultima = $d['filas'] ? end($d['filas'])['fecha'] : null;
+    dof_tc_registrar_corrida($desde, $hasta, count($d['filas']), $n, $d['fuera_rango'],
+                             $ultima, (bool)$d['filas'], 'serie completa');
+
+    return ['ok' => (bool)$d['filas'], 'leidas' => count($d['filas']), 'nuevas' => $n,
+            'fuera_rango' => $d['fuera_rango'], 'ultima' => $ultima, 'motivo' => ''];
+}
+
 /* ------------------------------------------------------------------ consulta */
 
 /** El tipo publicado exactamente ese día, o null si ese día no hubo. */

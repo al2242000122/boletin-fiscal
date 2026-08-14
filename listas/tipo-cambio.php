@@ -21,6 +21,24 @@ require_once __DIR__ . '/cron/lib/dof_tc.php';
 $fecha = trim((string)($_GET['fecha'] ?? ''));
 if ($fecha !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) $fecha = '';
 
+/* Traer la serie desde aquí, que es donde uno se entera de que falta. Antes el
+   mensaje mandaba a la consola: en un hosting compartido eso equivale a no
+   hacerlo nunca. */
+$avisoCarga = '';
+if (($_POST['accion'] ?? '') === 'traer'
+    && hash_equals($_SESSION['token'] ?? '', (string)($_POST['token'] ?? ''))) {
+    @set_time_limit(0);
+    try {
+        $r = dof_tc_traer_serie(2021);
+        $avisoCarga = $r['ok']
+            ? sprintf('Listo: %s días cargados, hasta el %s.',
+                      number_format($r['leidas']), $r['ultima'])
+            : 'No se pudo traer la serie: ' . $r['motivo'];
+    } catch (Throwable $e) {
+        $avisoCarga = 'No se pudo traer la serie: ' . $e->getMessage();
+    }
+}
+
 $estado = dof_tc_estado();
 $publicado = $aplicable = null;
 if ($estado['hay'] && $fecha !== '') {
@@ -112,10 +130,25 @@ function tc_fecha_larga(?string $iso): string
 <main class="seccion">
   <div class="contenedor">
 
+    <?php if ($avisoCarga): ?>
+      <div class="<?= str_starts_with($avisoCarga, 'Listo') ? 'latido vivo' : 'alerta' ?>"
+           style="margin-bottom:16px"><?= esc($avisoCarga) ?></div>
+    <?php endif; ?>
+
     <?php if (!$estado['hay']): ?>
-      <div class="alerta"><b>Todavía no hay ningún tipo de cambio cargado.</b><br>
-        Se trae con <code>php listas/cron/dof.php backfill 2021</code>, o solo con
-        que corra la tarea programada.</div>
+      <div class="cifra destacada">
+        <h2>La serie todavía no está cargada</h2>
+        <p style="margin:6px 0 16px;font-size:14.5px;line-height:1.65;color:var(--mut)">
+          Son <b>1.414 días desde enero de 2021</b>, y el DOF los entrega de una
+          sola vez: unos 320 KB y cinco segundos. Solo hace falta pulsarlo una
+          vez — a partir de ahí la tarea programada lo mantiene al día.
+        </p>
+        <form method="post" action="tipo-cambio.php">
+          <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
+          <input type="hidden" name="accion" value="traer">
+          <button class="btn-buscar">Traer la serie completa</button>
+        </form>
+      </div>
     <?php else: ?>
 
       <div class="latido <?= $estado['vivo'] ? 'vivo' : 'muerto' ?>">
