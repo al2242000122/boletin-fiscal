@@ -49,6 +49,18 @@ function ingestar(array $filtro = [], bool $forzar = false, ?callable $log = nul
         }
     }
 
+    /* El tipo de cambio del DOF va en la misma corrida.
+       Es una peticion de 320 KB y un par de segundos, y es lo que convierte al
+       cron en algo comprobable: las listas del SAT se publican cada uno o dos
+       meses, asi que si el cron se muere nadie se entera hasta que ya es tarde.
+       Esto se publica todos los dias habiles. */
+    try {
+        require_once __DIR__ . '/dof_tc.php';
+        dof_tc_sincronizar(15, $log);
+    } catch (Throwable $e) {
+        $log('   tipo de cambio DOF: ' . $e->getMessage());
+    }
+
     /* Aviso al final, una vez, con todo junto: si el SAT publica varias listas
        el mismo día no tiene sentido mandar un correo por cada una. Un fallo
        aquí no puede tumbar la ingesta: el dato ya está cargado. */

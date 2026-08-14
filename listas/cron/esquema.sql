@@ -129,6 +129,72 @@ CREATE TABLE IF NOT EXISTS bitacora (
   KEY ix_usuario (usuario, consultado_en)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================================
+--  Tipo de cambio del DOF (indicador 158)
+--
+--  POR QUÉ NO REUTILIZA snapshots / estatus / eventos. No es preferencia:
+--  está medido el 14/08/2026.
+--
+--  · La idempotencia de snapshots es UNIQUE (lista, sha256), y aquí no sirve.
+--    Se pidió el indicador tres veces con ventanas que terminan el viernes 14,
+--    el sábado 15 y el domingo 16 de agosto. Las tres devolvieron EXACTAMENTE
+--    el mismo dato —10 renglones, el último 14/08/2026 = 17.053000— y tres
+--    sha256 distintos, porque el HTML repite el rango pedido dentro de una
+--    celda. El sha256 es la huella de LA PREGUNTA, no de la respuesta: metido
+--    en snapshots, cada corrida diaria entraría como publicación nueva y el
+--    correo saldría todos los días, sábados incluidos.
+--  · Un tipo de cambio no tiene situación que cambie ni historial que
+--    versionar: valido_desde / valido_hasta / vigente quedarían muertas, y
+--    estatus.rfc es NOT NULL — habría que inventar un RFC para guardar un
+--    número.
+--  · Metido en ingestas o en eventos, apagaría las alarmas del artículo 69:
+--    251 altas al año enterrarían al 69-B, que es el producto.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dof_tipo_cambio (
+  -- OJO: esta fecha es la de PUBLICACIÓN en el DOF, no la de determinación.
+  -- Medido: la edición del DOF del 14/08/2026 dice "el tipo de cambio obtenido
+  -- el día de hoy fue de $17.0530" y va firmada "a 13 de agosto de 2026". El
+  -- indicador devuelve 17.053000 bajo la fecha 14/08. La tabla de Banxico lo
+  -- confirma con tres columnas para ese día: Determinación 17.0218,
+  -- Publicación DOF 17.0530, Para solventar obligaciones 17.0627. Los 1,414
+  -- días de la serie coinciden con la columna «Publicación DOF».
+  --
+  -- NO RESTAR UN DÍA «PARA CORREGIRLO». Eso recorre todas las conversiones
+  -- —tres días naturales en lunes, cinco después de Semana Santa— y no falla
+  -- nada: solo salen mal las cifras.
+  fecha         DATE            NOT NULL,
+  -- El indicador sirve seis decimales ("17.328800"). Medido: en los 1,414 días
+  -- de la serie los dos últimos siempre fueron cero, pero eso es el pasado.
+  -- Con DECIMAL(8,4) el día que el DOF sirva un quinto decimal significativo
+  -- MySQL lo redondearía sin decir nada, y esto es una cifra fiscal.
+  valor         DECIMAL(12,6)   NOT NULL,
+  fuente        VARCHAR(20)     NOT NULL DEFAULT 'DOF_INDICADOR',
+  ingresado_en  DATETIME        NOT NULL,
+  PRIMARY KEY (fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Constancia de cada corrida. Es el latido: lo que permite distinguir «hoy no
+-- había nada» de «esto lleva muerto una semana». Sin esta tabla, un sábado y
+-- una avería se ven igual, porque el DOF contesta 200 con página vacía ante
+-- cualquier parámetro inválido.
+CREATE TABLE IF NOT EXISTS dof_corridas (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  corrida_en    DATETIME        NOT NULL,
+  desde         DATE            NULL,
+  hasta         DATE            NULL,
+  filas_leidas  INT UNSIGNED    NOT NULL DEFAULT 0,
+  filas_nuevas  INT UNSIGNED    NOT NULL DEFAULT 0,
+  -- Filas que el filtro de cordura tiró. Se cuentan y se enseñan: descartar en
+  -- silencio es el fallo que este proyecto ya ha pagado dos veces.
+  filas_fuera_rango INT UNSIGNED NOT NULL DEFAULT 0,
+  ultima_fecha  DATE            NULL,
+  ok            TINYINT(1)      NOT NULL DEFAULT 1,
+  detalle       VARCHAR(300)    NULL,
+  PRIMARY KEY (id),
+  KEY ix_corrida (corrida_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ------------------------------------------------------------------ ingesta
 -- Última corrida por lista. Sirve para la alerta de "esta lista lleva N días
 -- sin cambiar", que suele significar que el SAT movió la URL.

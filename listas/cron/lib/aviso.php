@@ -22,6 +22,7 @@
 
 require_once __DIR__ . '/bd.php';
 require_once __DIR__ . '/migracion.php';
+require_once __DIR__ . '/dof_tc.php';
 
 const AVISO_MAX_FILAS = 40;   // en el correo; el resto se cuenta
 
@@ -88,9 +89,24 @@ function avisar_pendientes(?callable $log = null): array
         WHERE s.linea_base = 0 AND s.procesado_en IS NOT NULL AND s.avisado_en IS NULL
         ORDER BY s.lista")->fetchAll();
 
-    if (!$ev && !$pub) return ['enviados' => 0, 'eventos' => 0, 'motivo' => ''];
+    /* El latido, al revés de como se pide siempre.
+       El tipo de cambio del DOF se publica 251 días al año. Mandar un correo
+       cada vez sería enseñar a ignorarlos, y el día que llegue el del 69-B con
+       quince días hábiles corriendo tampoco se abriría. Así que el correo sale
+       cuando el latido SE PARA, no cuando late: el silencio es la buena noticia.
+       Y no se repite todos los días: una vez cada tres, o esto se convierte en
+       la misma lluvia que se quería evitar. */
+    $tc = dof_tc_estado();
+    $alarmaTc = false;
+    if ($tc['hay'] && !$tc['vivo']) {
+        $ultimoGrito = bd()->query("SELECT MAX(consultado_en) FROM bitacora
+                                    WHERE origen = 'aviso' AND resultado LIKE 'tc parado%'")->fetchColumn();
+        $alarmaTc = !$ultimoGrito || strtotime((string)$ultimoGrito) < strtotime('-3 days');
+    }
 
-    ['asunto' => $asunto, 'cuerpo' => $cuerpo] = aviso_componer($ev, $pub);
+    if (!$ev && !$pub && !$alarmaTc) return ['enviados' => 0, 'eventos' => 0, 'motivo' => ''];
+
+    ['asunto' => $asunto, 'cuerpo' => $cuerpo] = aviso_componer($ev, $pub, $tc, $alarmaTc);
 
     $cab = "MIME-Version: 1.0\r\n"
          . "Content-Type: text/html; charset=UTF-8\r\n"
@@ -135,7 +151,9 @@ function avisar_pendientes(?callable $log = null): array
     try {
         bd()->prepare("INSERT INTO bitacora (usuario,ip,origen,rfc_consultado,cantidad,resultado,consultado_en)
                        VALUES ('aviso', NULL, 'aviso', NULL, ?, ?, ?)")
-            ->execute([count($ev) + count($pub), mb_substr(implode(' y ', $partes), 0, 40), $ahora]);
+            ->execute([count($ev) + count($pub),
+                       mb_substr($alarmaTc ? 'tc parado ' . ($tc['dias'] ?? '?') . 'd'
+                                          : implode(' y ', $partes), 0, 40), $ahora]);
     } catch (Throwable $e) { /* la constancia no puede tumbar el aviso */ }
 
     return ['enviados' => count($para), 'eventos' => count($ev),
@@ -174,7 +192,7 @@ function aviso_probar(): array
 /* ------------------------------------------------------------------ formato */
 
 /** Asunto y cuerpo, sin enviar nada. Separado para poder revisarlo. */
-function aviso_componer(array $ev, array $pub = []): array
+function aviso_componer(array $ev, array $pub = [], ?array $tc = null, bool $alarmaTc = false): array
 {
     $altas   = array_values(array_filter($ev, fn($x) => $x['tipo'] === 'alta'));
     $cambios = array_values(array_filter($ev, fn($x) => $x['tipo'] === 'cambio'));
@@ -188,13 +206,18 @@ function aviso_componer(array $ev, array $pub = []): array
         if ($altas)   $piezas[] = count($altas) . ' nuevo' . (count($altas) === 1 ? '' : 's') . ' en la lista';
         if ($cambios) $piezas[] = count($cambios) . ' pasa' . (count($cambios) === 1 ? '' : 'n') . ' a definitivo';
         $asunto = 'SAT 69-B: ' . implode(' y ', $piezas) . ' (' . aviso_fecha_larga($fecha) . ')';
+    } elseif (!$pub && $alarmaTc) {
+        // Solo la alarma: es una averia, y el asunto tiene que decirlo.
+        $asunto = 'AVISO: la herramienta lleva ' . (int)($tc['dias'] ?? 0)
+                . ' días sin actualizarse';
     } else {
         $asunto = count($pub) === 1
             ? 'El SAT publicó una versión nueva de ' . aviso_etiqueta($pub[0]['lista'])
             : 'El SAT publicó ' . count($pub) . ' listados nuevos';
     }
 
-    return ['asunto' => $asunto, 'cuerpo' => aviso_cuerpo($ev, $altas, $cambios, $fecha, $pub)];
+    return ['asunto' => $asunto,
+            'cuerpo' => aviso_cuerpo($ev, $altas, $cambios, $fecha, $pub, $tc, $alarmaTc)];
 }
 
 function aviso_etiqueta(string $clave): string
@@ -218,10 +241,27 @@ function aviso_fecha_larga(string $iso): string
               : $iso;
 }
 
-function aviso_cuerpo(array $ev, array $altas, array $cambios, string $fecha, array $pub = []): string
+function aviso_cuerpo(array $ev, array $altas, array $cambios, string $fecha, array $pub = [],
+                      ?array $tc = null, bool $alarmaTc = false): string
 {
     $h = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
     $t = '';
+
+    /* --- la alarma va primero: es una averia, no una noticia -------------- */
+    if ($alarmaTc) {
+        $t .= '<div style="padding:14px 16px;background:#FBEEF0;border:1px solid #E6B9BF;
+                     border-radius:8px;margin:0 0 20px">
+                <p style="margin:0 0 8px;color:#8C2733"><b>La herramienta lleva '
+            . (int)($tc['dias'] ?? 0) . ' días sin actualizarse.</b></p>
+                <p style="margin:0;font-size:13.5px;color:#8C2733">
+                  El tipo de cambio del DOF se publica todos los días hábiles, así que
+                  si el último que tenemos es del <b>' . $h(aviso_fecha_larga((string)($tc['ultima'] ?? ''))) . '</b>
+                  algo dejó de correr. Mientras siga así, tampoco se detectaría una
+                  publicación nueva del SAT.<br><br>
+                  Suele ser la tarea programada: revísala en hPanel → Avanzado →
+                  Trabajos cron.</p></div>';
+        if ($ev || $pub) $t .= '<hr style="border:0;border-top:1px solid #E4EAF0;margin:0 0 20px">';
+    }
 
     /* --- publicaciones nuevas -------------------------------------------
        Va primero aunque no haya nada urgente: es la señal de que hay que
@@ -288,8 +328,17 @@ function aviso_cuerpo(array $ev, array $altas, array $cambios, string $fecha, ar
             style="color:#1D6FA5">Ver el detalle en el panel</a></p>';
     }
 
-    $titulo = $ev ? 'Movimientos en el listado 69-B'
-                  : (count($pub) === 1 ? 'Publicación nueva del SAT' : 'Publicaciones nuevas del SAT');
+    /* Pie con el latido en todos los correos que salen por otra razón: da la
+       fecha del último dato sin gastar un correo propio en decirlo. */
+    if ($tc && $tc['hay'] && !$alarmaTc) {
+        $t .= '<p style="margin:22px 0 0;padding-top:12px;border-top:1px solid #E4EAF0;
+                font-size:12px;color:#7A8896">Tipo de cambio del DOF al día: último publicado el '
+            . $h(aviso_fecha_larga((string)$tc['ultima'])) . ', ' . $h($tc['valor']) . ' pesos por dólar.</p>';
+    }
+
+    $titulo = $alarmaTc && !$ev && !$pub ? 'La herramienta dejó de actualizarse'
+            : ($ev ? 'Movimientos en el listado 69-B'
+                   : (count($pub) === 1 ? 'Publicación nueva del SAT' : 'Publicaciones nuevas del SAT'));
     return aviso_plantilla($titulo, $t);
 }
 
