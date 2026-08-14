@@ -21,6 +21,7 @@ $rfcBuscado = trim((string)($_GET['rfc'] ?? ''));
 $fSituacion = (string)($_GET['situacion'] ?? '');
 $fTipo      = (string)($_GET['tipo'] ?? '');
 $fTexto     = trim((string)($_GET['q'] ?? ''));
+$fAnio      = preg_match('/^\d{4}$/', (string)($_GET['anio'] ?? '')) ? (string)$_GET['anio'] : '';
 $pagina     = max(1, (int)($_GET['p'] ?? 1));
 const POR_PAGINA = 50;
 
@@ -64,8 +65,25 @@ if ($listo && $rfcBuscado !== '') {
 }
 
 /* --------------------------------------------------------------- listado */
-$filas = []; $total = 0; $situaciones = [];
+$filas = []; $total = 0; $situaciones = []; $anios = [];
 if ($listo && $rfcBuscado === '') {
+    /* Años del oficio, para el filtro.
+       La fecha que sirve para filtrar NO es valido_desde —la columna «Desde»—:
+       esa dice desde cuándo consta así en esta herramienta, y medido el
+       13/08/2026 vale 2026-05-31 en los 14 432 registros, porque todos entraron
+       en la misma carga inicial. Filtrar por ahí no separaría nada.
+       La que sí separa es la del oficio global, que va de 2014 a 2026. Está al
+       final del texto del oficio y se saca con los cuatro últimos caracteres:
+       comprobado, los 14 432 la traen y ninguno se queda fuera. No se intenta
+       interpretar el número de oficio, que sí tiene tres formatos distintos
+       conviviendo (ver docs/ESQUEMAS.md §6). */
+    $anios = bd()->query("
+        SELECT SUBSTRING(TRIM(proc_texto), -4) anio, COUNT(*) n
+        FROM estatus
+        WHERE vigente = 1 AND lista = 'art69b.completo'
+          AND TRIM(proc_texto) REGEXP '[0-9]{4}$'
+        GROUP BY anio ORDER BY anio DESC")->fetchAll();
+
     // Solo el listado completo: los otros archivos del 69-B son subconjuntos
     // suyos, y contarlos todos duplicaría a cada contribuyente.
     $situaciones = bd()->query("
@@ -79,6 +97,7 @@ if ($listo && $rfcBuscado === '') {
     if ($fTipo !== '')      { $donde[] = "tipo_persona = ?"; $par[] = $fTipo; }
     if ($fTexto !== '')     { $donde[] = "(nombre LIKE ? OR rfc LIKE ?)";
                               $par[] = "%$fTexto%"; $par[] = strtoupper($fTexto) . "%"; }
+    if ($fAnio !== '')      { $donde[] = "SUBSTRING(TRIM(proc_texto), -4) = ?"; $par[] = $fAnio; }
     // El listado completo ya contiene a los demás: se consulta solo ese para
     // no mostrar el mismo contribuyente cinco veces.
     $donde[] = "lista = 'art69b.completo'";
@@ -93,7 +112,7 @@ if ($listo && $rfcBuscado === '') {
                         FROM estatus WHERE $w ORDER BY nombre LIMIT " . POR_PAGINA . " OFFSET $off");
     $q->execute($par);
     $filas = $q->fetchAll();
-    if ($fSituacion || $fTipo || $fTexto) bitacora('web', null, count($filas), 'listado');
+    if ($fSituacion || $fTipo || $fTexto || $fAnio) bitacora('web', null, count($filas), 'listado');
 }
 
 $paginas = (int)ceil($total / POR_PAGINA);
@@ -274,18 +293,29 @@ function url(array $cambios = []): string
             <option value="F" <?= $fTipo === 'F' ? 'selected' : '' ?>>Persona física</option>
           </select>
         </div>
+        <div class="campo">
+          <label for="anio">Año del oficio</label>
+          <select id="anio" name="anio">
+            <option value="">Todos</option>
+            <?php foreach ($anios as $a): ?>
+              <option value="<?= esc($a['anio']) ?>" <?= $fAnio === $a['anio'] ? 'selected' : '' ?>>
+                <?= esc($a['anio']) ?> (<?= number_format((int)$a['n']) ?>)
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
         <div class="campo" style="flex:1 1 220px">
           <label for="q">Nombre o RFC</label>
           <input type="text" id="q" name="q" value="<?= esc($fTexto) ?>" placeholder="parte del nombre">
         </div>
         <button class="btn-buscar">Filtrar</button>
-        <?php if ($fSituacion || $fTipo || $fTexto): ?>
+        <?php if ($fSituacion || $fTipo || $fTexto || $fAnio): ?>
           <a class="limpiar" href="consulta.php">Quitar filtros</a>
         <?php endif; ?>
       </form>
 
       <p class="seccion-nota"><?= number_format($total) ?> contribuyentes
-        <?= $fSituacion || $fTipo || $fTexto ? 'con esos filtros' : 'en el listado completo del 69-B' ?>.</p>
+        <?= $fSituacion || $fTipo || $fTexto || $fAnio ? 'con esos filtros' : 'en el listado completo del 69-B' ?>.</p>
 
       <table class="datos">
         <tr><th>RFC</th><th>Nombre</th><th>Situación</th><th>Tipo</th><th>Desde</th></tr>
