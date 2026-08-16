@@ -14,6 +14,13 @@
 
 require __DIR__ . '/../acceso.php';
 acceso_exigir();
+require_once __DIR__ . '/cabecera.php';
+require_once __DIR__ . '/cron/lib/migracion.php';
+
+// Bases creadas con una versión anterior: se ponen al día solas. Las demás
+// pantallas ya lo hacían; estas dos no, y bastaba con entrar por aquí
+// primero para toparse con una columna que todavía no existía.
+try { migrar_columnas_pendientes(); } catch (Throwable $e) { /* se dirá abajo */ }
 require_once __DIR__ . '/cron/lib/bd.php';
 require_once __DIR__ . '/cron/lib/csv_sat.php';
 require_once __DIR__ . '/cron/lib/cobertura.php';
@@ -128,26 +135,10 @@ function url(array $cambios = []): string
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Consulta de listas del SAT — International Support Services, S.C.</title>
+<title>Consultar RFC · International Support Services</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="../css/portal.css">
 <style>
-  .buscador{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
-             padding:20px 22px; background:#fff; border:1px solid var(--rule);
-             border-radius:10px; margin-bottom:20px; }
-  .campo{ display:flex; flex-direction:column; gap:5px; }
-  .campo label{ font-size:11px; font-weight:700; letter-spacing:.08em;
-                text-transform:uppercase; color:var(--mut); }
-  .campo input, .campo select{ font:inherit; font-size:14.5px; padding:9px 11px;
-     border:1px solid var(--rule); border-radius:7px; color:var(--ink); background:#fff; }
-  .campo input:focus, .campo select:focus{ outline:none; border-color:var(--acc);
-     box-shadow:0 0 0 3px rgba(29,111,165,.16); }
-  .btn-buscar{ font:inherit; font-size:14.5px; font-weight:600; color:#fff;
-     background:var(--acc); border:0; border-radius:7px; padding:10px 20px; cursor:pointer; }
-  .btn-buscar:hover{ background:#17608F; }
-  .limpiar{ font-size:13px; color:var(--mut); text-decoration:none; padding:10px 4px; }
-  .limpiar:hover{ color:var(--acc); text-decoration:underline; }
-
   .ficha{ padding:22px; background:#fff; border:1px solid var(--rule);
           border-radius:10px; margin-bottom:16px; }
   .ficha.hallado{ border-left:4px solid var(--bad); }
@@ -156,51 +147,11 @@ function url(array $cambios = []): string
   .ficha .rfc{ font-family:ui-monospace,Consolas,monospace; font-size:15px; color:var(--mut); }
   .veredicto{ margin:14px 0 0; font-size:14.5px; line-height:1.6; }
   .veredicto b{ color:var(--navy); }
-
-  .etq{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px;
-        font-weight:700; letter-spacing:.03em; }
-  .etq-Presunto{ background:#FDF0D5; color:#8A5B00; }
-  .etq-Definitivo{ background:#FBEEF0; color:#8C2733; }
-  .etq-Desvirtuado{ background:#EAF3FB; color:#1D6FA5; }
-  .etq-SentenciaFavorable{ background:#EDF7F0; color:#2E7D4F; }
-
-  table.datos{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff;
-               border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
-  table.datos th{ text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-                  color:var(--mut); padding:11px 12px; background:#F7F9FB;
-                  border-bottom:1px solid var(--rule); }
-  table.datos td{ padding:11px 12px; border-bottom:1px solid var(--rule); vertical-align:top; }
-  table.datos tr:last-child td{ border-bottom:0; }
-  .mono{ font-family:ui-monospace,Consolas,monospace; font-size:12.5px; }
-  .tenue{ color:var(--mut); font-size:12.5px; }
-  .paginacion{ display:flex; gap:8px; align-items:center; margin-top:16px; font-size:13.5px; }
-  .paginacion a{ padding:7px 13px; border:1px solid var(--rule); border-radius:6px;
-                 text-decoration:none; color:var(--acc); background:#fff; }
-  .paginacion a:hover{ border-color:var(--acc); }
-  .alerta{ padding:12px 14px; border-radius:8px; background:#FBEEF0; border:1px solid #E6B9BF;
-           color:#8C2733; font-size:13.5px; margin-bottom:16px; }
-  .nota-legal{ margin-top:26px; padding:14px 16px; background:var(--soft); border-radius:8px;
-               font-size:12.5px; line-height:1.6; color:var(--mut); }
 </style>
 </head>
 <body>
 
-<header class="cabecera">
-  <div class="contenedor">
-    <div class="marca">
-      <div class="marca-sigla" aria-hidden="true">ISS</div>
-      <div class="marca-nombre">
-        <b>Listas del SAT</b>
-        <span>Artículo 69 · 69-B · 69-B Bis</span>
-      </div>
-    </div>
-    <p class="cabecera-contacto">
-      <a href="lote.php">Consulta por lote</a> · <a href="alertas.php">Alertas</a> ·
-      <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="equivalencias.php">Equivalencias</a> ·
-      <a href="index.php">Administración</a> · <a href="../index.php">Portal</a>
-    </p>
-  </div>
-</header>
+<?php cabecera('consulta', 'Listas del SAT', 'Artículo 69 · 69-B · 69-B Bis'); ?>
 
 <main class="seccion">
   <div class="contenedor">
@@ -365,12 +316,7 @@ function url(array $cambios = []): string
   </div>
 </main>
 
-<footer class="pie">
-  <div class="contenedor">
-    <p><b>International Support Services, S.C.</b><br>Uso interno del despacho.</p>
-    <p><a href="../salir.php">Cerrar sesión</a></p>
-  </div>
-</footer>
+<?php pie(); ?>
 
 </body>
 </html>

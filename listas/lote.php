@@ -28,6 +28,13 @@
 
 require __DIR__ . '/../acceso.php';
 acceso_exigir();
+require_once __DIR__ . '/cabecera.php';
+require_once __DIR__ . '/cron/lib/migracion.php';
+
+// Bases creadas con una versión anterior: se ponen al día solas. Las demás
+// pantallas ya lo hacían; estas dos no, y bastaba con entrar por aquí
+// primero para toparse con una columna que todavía no existía.
+try { migrar_columnas_pendientes(); } catch (Throwable $e) { /* se dirá abajo */ }
 require_once __DIR__ . '/cron/lib/bd.php';
 require_once __DIR__ . '/cron/lib/csv_sat.php';
 require_once __DIR__ . '/cron/lib/fuentes.php';   // solo por FUENTES_CATALOGO
@@ -465,82 +472,40 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Consulta por lote — Listas del SAT</title>
+<title>Consulta por lote · International Support Services</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="../css/portal.css">
 <style>
-  .caja{ padding:20px 22px; background:#fff; border:1px solid var(--rule);
-         border-radius:10px; margin-bottom:18px; }
-  .campo{ display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
-  .campo label{ font-size:11px; font-weight:700; letter-spacing:.08em;
-                text-transform:uppercase; color:var(--mut); }
   textarea{ font:inherit; font-family:ui-monospace,Consolas,monospace; font-size:13.5px;
             padding:11px 12px; border:1px solid var(--rule); border-radius:7px;
             min-height:150px; resize:vertical; color:var(--ink); background:#fff; }
   textarea:focus{ outline:none; border-color:var(--acc); box-shadow:0 0 0 3px rgba(29,111,165,.16); }
   .fila-acciones{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-  .btn-buscar{ font:inherit; font-size:14.5px; font-weight:600; color:#fff; background:var(--acc);
-               border:0; border-radius:7px; padding:11px 22px; cursor:pointer; }
-  .btn-buscar:hover{ background:#17608F; }
-  .btn-csv{ font:inherit; font-size:13.5px; font-weight:600; color:var(--acc); background:#fff;
-            border:1px solid var(--acc); border-radius:7px; padding:9px 16px; cursor:pointer; }
-  .btn-csv:hover{ background:var(--soft); }
   input[type=file]{ font-size:13px; color:var(--mut); }
-
   .marcador{ display:flex; gap:28px; flex-wrap:wrap; padding:20px 24px;
              background:var(--soft); border-radius:10px; margin-bottom:18px; }
   .marcador div b{ display:block; font-size:26px; line-height:1.15; color:var(--navy); }
   .marcador div span{ font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--mut); }
   .marcador .malo b{ color:#8C2733; }
   .marcador .bien b{ color:#2E7D4F; }
-
-  table.datos{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff;
-               border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
-  table.datos th{ text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-                  color:var(--mut); padding:11px 12px; background:#F7F9FB;
-                  border-bottom:1px solid var(--rule); }
-  table.datos td{ padding:11px 12px; border-bottom:1px solid var(--rule); vertical-align:top; }
-  table.datos tr:last-child td{ border-bottom:0; }
-  .mono{ font-family:ui-monospace,Consolas,monospace; font-size:12.5px; }
-  .tenue{ color:var(--mut); font-size:12.5px; }
-  .etq{ display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px; font-weight:700; }
-  .g1{ background:#FBEEF0; color:#8C2733; }   /* definitivo */
-  .g2{ background:#FDF0D5; color:#8A5B00; }   /* presunto */
-  .g3{ background:#F3EEF8; color:#5B3E86; }   /* bis */
-  .g4{ background:#EAF3FB; color:#1D6FA5; }   /* art 69 */
-  .g5{ background:#EDF7F0; color:#2E7D4F; }   /* sin efecto adverso */
+  /* Un color por gravedad del veredicto, en el orden de lote_clasificar():
+     1 definitivo · 2 presunto · 3 Bis · 4 artículo 69 · 5 sin efecto adverso.
+     El 5 va en verde a propósito: desvirtuado y sentencia favorable aparecen
+     en el listado pero no son un hallazgo adverso. */
+  .g1{ background:#FBEEF0; color:#8C2733; }
+  .g2{ background:#FDF0D5; color:#8A5B00; }
+  .g3{ background:#F3EEF8; color:#5B3E86; }
+  .g4{ background:#EAF3FB; color:#1D6FA5; }
+  .g5{ background:#EDF7F0; color:#2E7D4F; }
+  /* Fila resaltada: solo lo que anula efectos o corre plazo. */
   tr.f1{ background:#FFFAFA; }
-  .alerta{ padding:12px 14px; border-radius:8px; background:#FBEEF0; border:1px solid #E6B9BF;
-           color:#8C2733; font-size:13.5px; margin-bottom:16px; }
-  .aviso{ padding:12px 14px; border-radius:8px; background:#FDF6E3; border:1px solid #E8D9A8;
-          color:#7A5D00; font-size:13.5px; margin-bottom:16px; }
-  details.plegable{ margin-top:18px; }
-  details.plegable summary{ cursor:pointer; font-size:13.5px; color:var(--acc); padding:8px 0; }
   .rejilla-rfc{ display:flex; flex-wrap:wrap; gap:6px 14px; padding:14px 0 4px;
                 font-family:ui-monospace,Consolas,monospace; font-size:12.5px; color:var(--mut); }
-  .nota-legal{ margin-top:26px; padding:14px 16px; background:var(--soft); border-radius:8px;
-               font-size:12.5px; line-height:1.6; color:var(--mut); }
-  .nota-legal b{ color:var(--navy); }
 </style>
 </head>
 <body>
 
-<header class="cabecera">
-  <div class="contenedor">
-    <div class="marca">
-      <div class="marca-sigla" aria-hidden="true">ISS</div>
-      <div class="marca-nombre">
-        <b>Consulta por lote</b>
-        <span>Artículo 69 · 69-B · 69-B Bis</span>
-      </div>
-    </div>
-    <p class="cabecera-contacto">
-      <a href="consulta.php">Consultar un RFC</a> · <a href="alertas.php">Alertas</a> ·
-      <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="equivalencias.php">Equivalencias</a> ·
-      <a href="index.php">Administración</a>
-    </p>
-  </div>
-</header>
+<?php cabecera('lote', 'Consulta por lote', 'Artículo 69 · 69-B · 69-B Bis'); ?>
 
 <main class="seccion">
   <div class="contenedor">
@@ -572,7 +537,7 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
       </div>
     <?php endif; ?>
 
-    <form class="caja" method="post" action="lote.php" enctype="multipart/form-data">
+    <form class="panel" method="post" action="lote.php" enctype="multipart/form-data">
       <input type="hidden" name="token" value="<?= esc(acceso_token()) ?>">
       <input type="hidden" name="accion" value="consultar">
       <div class="campo">
@@ -745,12 +710,7 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
   </div>
 </main>
 
-<footer class="pie">
-  <div class="contenedor">
-    <p><b>International Support Services, S.C.</b><br>Uso interno del despacho.</p>
-    <p><a href="../salir.php">Cerrar sesión</a></p>
-  </div>
-</footer>
+<?php pie(); ?>
 
 </body>
 </html>

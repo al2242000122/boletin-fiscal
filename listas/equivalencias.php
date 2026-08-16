@@ -14,6 +14,7 @@
 
 require __DIR__ . '/../acceso.php';
 acceso_exigir();
+require_once __DIR__ . '/cabecera.php';
 require_once __DIR__ . '/cron/lib/dof_eq.php';
 require_once __DIR__ . '/cron/lib/dof_tc.php';
 require_once __DIR__ . '/cron/lib/migracion.php';
@@ -76,68 +77,16 @@ function eq_mes_largo(string $p): string
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Equivalencias de monedas — International Support Services, S.C.</title>
+<title>Equivalencias de monedas · International Support Services</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="../css/portal.css">
 <style>
-  .buscador{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
-             padding:20px 22px; background:#fff; border:1px solid var(--rule);
-             border-radius:10px; margin-bottom:20px; }
-  .campo{ display:flex; flex-direction:column; gap:5px; }
-  .campo label{ font-size:11px; font-weight:700; letter-spacing:.08em;
-                text-transform:uppercase; color:var(--mut); }
-  .campo input, .campo select{ font:inherit; font-size:14.5px; padding:9px 11px;
-     border:1px solid var(--rule); border-radius:7px; color:var(--ink); background:#fff; }
-  .btn-buscar{ font:inherit; font-size:14.5px; font-weight:600; color:#fff;
-     background:var(--acc); border:0; border-radius:7px; padding:10px 20px; cursor:pointer; }
-  .limpiar{ font-size:13px; color:var(--mut); text-decoration:none; padding:10px 4px; }
-
-  .cifra{ padding:22px 24px; background:#fff; border:1px solid var(--rule);
-          border-radius:10px; margin-bottom:14px; }
-  .cifra.destacada{ border-left:4px solid var(--acc); }
-  .cifra h2{ margin:0 0 6px; font-size:13px; letter-spacing:.06em;
-             text-transform:uppercase; color:var(--mut); }
-  .estado{ display:flex; gap:20px; flex-wrap:wrap; padding:16px 22px; background:#F2F8F4;
-           border:1px solid #BBDDC7; border-radius:10px; margin-bottom:20px; }
-  .estado b{ color:var(--navy); }
-  table.datos{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff;
-               border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
-  table.datos th{ text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-                  color:var(--mut); padding:11px 12px; background:#F7F9FB;
-                  border-bottom:1px solid var(--rule); }
-  table.datos td{ padding:10px 12px; border-bottom:1px solid var(--rule); }
-  table.datos tr:last-child td{ border-bottom:0; }
   tr.pormil{ background:#FFF9F0; }
-  .mono{ font-family:ui-monospace,Consolas,monospace; }
-  .tenue{ color:var(--mut); font-size:12.5px; }
-  .etq{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px;
-        font-weight:700; background:#FDF0D5; color:#8A5B00; }
-  .alerta{ padding:12px 14px; border-radius:8px; background:#FBEEF0; border:1px solid #E6B9BF;
-           color:#8C2733; font-size:13.5px; margin-bottom:16px; }
-  .aviso{ padding:12px 14px; border-radius:8px; background:#FDF6E3; border:1px solid #E8D9A8;
-          color:#7A5D00; font-size:13.5px; margin-bottom:16px; }
-  .nota-legal{ margin-top:26px; padding:14px 16px; background:var(--soft); border-radius:8px;
-               font-size:12.5px; line-height:1.6; color:var(--mut); }
-  .nota-legal b{ color:var(--navy); }
 </style>
 </head>
 <body>
 
-<header class="cabecera">
-  <div class="contenedor">
-    <div class="marca">
-      <div class="marca-sigla" aria-hidden="true">ISS</div>
-      <div class="marca-nombre">
-        <b>Equivalencias de monedas</b>
-        <span>Diario Oficial de la Federación</span>
-      </div>
-    </div>
-    <p class="cabecera-contacto">
-      <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="consulta.php">Listas del SAT</a> ·
-      <a href="index.php">Administración</a> · <a href="../index.php">Portal</a>
-    </p>
-  </div>
-</header>
+<?php cabecera('equivalencias', 'Equivalencias de monedas', 'Diario Oficial de la Federación'); ?>
 
 <main class="seccion">
   <div class="contenedor">
@@ -253,12 +202,7 @@ function eq_mes_largo(string $p): string
   </div>
 </main>
 
-<footer class="pie">
-  <div class="contenedor">
-    <p><b>International Support Services, S.C.</b><br>Uso interno del despacho.</p>
-    <p><a href="../salir.php">Cerrar sesión</a></p>
-  </div>
-</footer>
+<?php pie(); ?>
 
 </body>
 </html>

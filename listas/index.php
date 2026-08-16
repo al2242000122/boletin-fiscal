@@ -9,6 +9,7 @@
 
 require __DIR__ . '/../acceso.php';
 acceso_exigir();
+require_once __DIR__ . '/cabecera.php';
 
 /* --- estado ------------------------------------------------------------- */
 $hayConfig = is_file(__DIR__ . '/../privado/config.php');
@@ -49,7 +50,7 @@ if ($hayConfig) {
         if (in_array('estatus', $tablas, true)) {
             // Bases creadas con una versión anterior: se ponen al día solas.
             require_once __DIR__ . '/cron/lib/migracion.php';
-            $migrado = migrar_columnas_pendientes();
+            migrar_columnas_pendientes();
             require_once __DIR__ . '/cron/lib/cobertura.php';
             $cob = cobertura();
             $resumen = bd()->query("
@@ -172,7 +173,7 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Administración · Listas del SAT</title>
+<title>Administración · International Support Services</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="stylesheet" href="../css/portal.css">
 <style>
@@ -188,54 +189,11 @@ if (!empty($_SESSION['salida_listas'])) { $salida = $_SESSION['salida_listas']; 
   .paso p{ margin:0 0 10px; font-size:13.5px; line-height:1.6; color:var(--mut); }
   code{ background:var(--soft); padding:2px 6px; border-radius:4px;
         font-size:12.5px; color:var(--navy); }
-  .btn-accion{ font:inherit; font-size:14px; font-weight:600; color:#fff; background:var(--acc);
-               border:0; border-radius:7px; padding:10px 18px; cursor:pointer; }
-  .btn-accion:hover{ background:#17608F; }
-  .btn-accion[disabled]{ background:#B9C6D3; cursor:not-allowed; }
-  pre.salida{ background:#0E1116; color:#D6DEE8; padding:16px; border-radius:8px;
-              font-size:12.5px; line-height:1.55; overflow-x:auto; white-space:pre-wrap; }
-  table.datos{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff;
-               border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
-  table.datos th{ text-align:left; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
-                  color:var(--mut); padding:10px 12px; background:#F7F9FB;
-                  border-bottom:1px solid var(--rule); }
-  table.datos td{ padding:10px 12px; border-bottom:1px solid var(--rule); }
-  table.datos tr:last-child td{ border-bottom:0; }
-  .alerta{ padding:12px 14px; border-radius:8px; background:#FBEEF0; border:1px solid #E6B9BF;
-           color:#8C2733; font-size:13.5px; line-height:1.55; margin-bottom:14px; }
-  .aviso{ padding:12px 14px; border-radius:8px; background:#FDF6E3; border:1px solid #E8D9A8;
-          color:#7A5D00; font-size:13.5px; line-height:1.55; margin-bottom:14px; }
-  .estado{ display:flex; gap:20px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-           padding:18px 22px; background:#F2F8F4; border:1px solid #BBDDC7;
-           border-radius:10px; margin-bottom:22px; }
-  .estado b{ color:var(--navy); font-size:15px; }
-  .estado .tenue{ color:var(--mut); font-size:13px; }
-  details.avanzado{ margin-top:26px; }
-  details.avanzado summary{ cursor:pointer; font-size:13px; color:var(--mut); }
-  details.avanzado summary:hover{ color:var(--acc); }
-  .comando{ display:block; margin-top:10px; padding:12px 14px; background:#0E1116; color:#D6DEE8;
-            border-radius:8px; font-family:ui-monospace,Consolas,monospace; font-size:12.5px;
-            overflow-x:auto; white-space:pre; }
 </style>
 </head>
 <body>
 
-<header class="cabecera">
-  <div class="contenedor">
-    <div class="marca">
-      <div class="marca-sigla" aria-hidden="true">ISS</div>
-      <div class="marca-nombre">
-        <b>Listas del SAT</b>
-        <span>Administración</span>
-      </div>
-    </div>
-    <p class="cabecera-contacto">
-      <a href="consulta.php">Consultar RFC</a> · <a href="lote.php">Por lote</a> ·
-      <a href="alertas.php">Alertas</a> · <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="equivalencias.php">Equivalencias</a> ·
-      <a href="../index.php">Portal</a>
-    </p>
-  </div>
-</header>
+<?php cabecera('index', 'Listas del SAT', 'Administración'); ?>
 
 <main class="seccion">
   <div class="contenedor">
@@ -629,12 +587,7 @@ const AVISO_REMITENTE = 'alertas@insusermx.com';</code>
   </div>
 </main>
 
-<footer class="pie">
-  <div class="contenedor">
-    <p><b>International Support Services, S.C.</b><br>Uso interno del despacho.</p>
-    <p><a href="../salir.php">Cerrar sesión</a></p>
-  </div>
-</footer>
+<?php pie(); ?>
 
 </body>
 </html>

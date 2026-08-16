@@ -389,3 +389,153 @@ body{
   .tarjeta{ transition: none; }
   .tarjeta:hover{ transform: none; }
 }
+
+/* ==========================================================================
+   Componentes de las herramientas
+
+   Antes vivían repetidos dentro de un <style> en cada pantalla: 269 líneas
+   entre las seis, con nueve clases definidas hasta seis veces y ya
+   divergiendo —el mismo botón tenía tres rellenos distintos y la caja de
+   búsqueda se llamaba .buscador, .filtros o .caja según la página—.
+   Aquí están una sola vez. Lo que queda en cada pantalla es solo lo suyo.
+   ========================================================================== */
+
+/* --- caja de filtros y campos ------------------------------------------- */
+.buscador{
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+  padding: 20px 22px; background: #fff; border: 1px solid var(--rule);
+  border-radius: 10px; margin-bottom: 20px;
+}
+.campo{ display: flex; flex-direction: column; gap: 5px; }
+.campo label{
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--mut);
+}
+.campo input, .campo select, .buscador textarea{
+  font: inherit; font-size: 14.5px; padding: 9px 11px;
+  border: 1px solid var(--rule); border-radius: 7px;
+  color: var(--ink); background: #fff;
+}
+.campo input:focus, .campo select:focus, .buscador textarea:focus{
+  outline: none; border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(29,111,165,.16);
+}
+
+/* Caja blanca sin disposición propia: el formulario del lote apila un
+   textarea y una fila de botones, así que no puede ser flex como .buscador. */
+.panel{
+  padding: 20px 22px; background: #fff; border: 1px solid var(--rule);
+  border-radius: 10px; margin-bottom: 18px;
+}
+
+/* --- botones ------------------------------------------------------------ */
+.btn-buscar, .btn-accion{
+  font: inherit; font-size: 14.5px; font-weight: 600; color: #fff;
+  background: var(--acc); border: 0; border-radius: 7px;
+  padding: 10px 20px; cursor: pointer;
+}
+.btn-buscar:hover, .btn-accion:hover{ background: #17608F; }
+.btn-accion[disabled]{ background: #B9C6D3; cursor: not-allowed; }
+.btn-menor{ padding: 8px 16px; font-size: 13px; }
+.btn-csv{
+  font: inherit; font-size: 13.5px; font-weight: 600; color: var(--acc);
+  background: #fff; border: 1px solid var(--acc); border-radius: 7px;
+  padding: 9px 16px; cursor: pointer;
+}
+.btn-csv:hover{ background: var(--soft); }
+.limpiar{ font-size: 13px; color: var(--mut); text-decoration: none; padding: 10px 4px; }
+.limpiar:hover{ color: var(--acc); text-decoration: underline; }
+
+/* --- tablas ------------------------------------------------------------- */
+table.datos{
+  width: 100%; border-collapse: collapse; font-size: 13.5px; background: #fff;
+  border: 1px solid var(--rule); border-radius: 10px; overflow: hidden;
+}
+table.datos th{
+  text-align: left; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--mut); padding: 11px 12px; background: #F7F9FB;
+  border-bottom: 1px solid var(--rule);
+}
+table.datos td{ padding: 10px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.datos tr:last-child td{ border-bottom: 0; }
+
+.mono{ font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+.tenue{ color: var(--mut); font-size: 12.5px; }
+
+/* --- avisos ------------------------------------------------------------- */
+.alerta{
+  padding: 12px 14px; border-radius: 8px; background: #FBEEF0;
+  border: 1px solid #E6B9BF; color: #8C2733;
+  font-size: 13.5px; line-height: 1.55; margin-bottom: 16px;
+}
+.aviso{
+  padding: 12px 14px; border-radius: 8px; background: #FDF6E3;
+  border: 1px solid #E8D9A8; color: #7A5D00;
+  font-size: 13.5px; line-height: 1.55; margin-bottom: 16px;
+}
+.estado{
+  display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; padding: 18px 22px;
+  background: #F2F8F4; border: 1px solid #BBDDC7;
+  border-radius: 10px; margin-bottom: 20px;
+}
+.estado b{ color: var(--navy); font-size: 15px; }
+
+/* --- fichas y cifras ---------------------------------------------------- */
+.cifra{
+  padding: 22px 24px; background: #fff; border: 1px solid var(--rule);
+  border-radius: 10px; margin-bottom: 14px;
+}
+.cifra.destacada{ border-left: 4px solid var(--acc); }
+.cifra h2{
+  margin: 0 0 6px; font-size: 13px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--mut);
+}
+.cifra .valor{ font-size: 34px; font-weight: 700; color: var(--navy); line-height: 1.1; }
+.cifra .pie{ margin-top: 8px; font-size: 13.5px; color: var(--mut); line-height: 1.6; }
+
+/* --- etiquetas de situación --------------------------------------------- */
+.etq{
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .03em;
+}
+.etq-Presunto,   .etq-alta  { background: #FDF0D5; color: #8A5B00; }
+.etq-Definitivo             { background: #FBEEF0; color: #8C2733; }
+.etq-Desvirtuado,.etq-cambio{ background: #EAF3FB; color: #1D6FA5; }
+.etq-SentenciaFavorable, .etq-baja{ background: #EDF7F0; color: #2E7D4F; }
+
+/* --- paginación y plegables --------------------------------------------- */
+.paginacion{ display: flex; gap: 8px; align-items: center; margin-top: 16px; font-size: 13.5px; }
+.paginacion a{
+  padding: 7px 13px; border: 1px solid var(--rule); border-radius: 6px;
+  text-decoration: none; color: var(--acc); background: #fff;
+}
+.paginacion a:hover{ border-color: var(--acc); }
+details.plegable, details.avanzado{ margin-top: 18px; }
+details.plegable summary{ cursor: pointer; font-size: 13.5px; color: var(--acc); padding: 8px 0; }
+details.avanzado summary{ cursor: pointer; font-size: 13px; color: var(--mut); }
+details.avanzado summary:hover{ color: var(--acc); }
+
+/* --- nota al pie de las pantallas --------------------------------------- */
+.nota-legal{
+  margin-top: 26px; padding: 14px 16px; background: var(--soft);
+  border-radius: 8px; font-size: 12.5px; line-height: 1.6; color: var(--mut);
+}
+.nota-legal b{ color: var(--navy); }
+
+/* --- salida de consola y comandos --------------------------------------- */
+pre.salida{
+  background: #0E1116; color: #D6DEE8; padding: 16px; border-radius: 8px;
+  font-size: 12.5px; line-height: 1.55; overflow-x: auto; white-space: pre-wrap;
+}
+code.comando{
+  display: block; margin-top: 10px; padding: 12px 14px; background: #0E1116;
+  color: #D6DEE8; border-radius: 8px; font-family: ui-monospace, Consolas, monospace;
+  font-size: 12.5px; overflow-x: auto; white-space: pre;
+}
+
+/* --- la barra de navegación de las herramientas ------------------------- */
+.cabecera-contacto a[aria-current="page"]{
+  color: #fff; font-weight: 600; border-bottom: 2px solid rgba(255,255,255,.55);
+  padding-bottom: 2px;
+}
