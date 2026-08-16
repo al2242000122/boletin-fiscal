@@ -61,6 +61,19 @@ function ingestar(array $filtro = [], bool $forzar = false, ?callable $log = nul
         $log('   tipo de cambio DOF: ' . $e->getMessage());
     }
 
+    /* Equivalencias mensuales. Se busca solo desde el último mes que ya está,
+       no desde 2021: así son dos o tres consultas al buscador del DOF y no
+       trece. La nota del mes M sale entre los días 4 y 7 de M+1, así que
+       corriendo a diario se encuentra sola en cuanto aparece. */
+    try {
+        require_once __DIR__ . '/dof_eq.php';
+        $eq = dof_eq_estado();
+        $r = dof_eq_sincronizar($eq['ultimo'] ?? '2021-01', null, $log, 3);
+        if ($r['nuevos']) $log("   equivalencias: {$r['nuevos']} mes(es) nuevo(s)");
+    } catch (Throwable $e) {
+        $log('   equivalencias DOF: ' . $e->getMessage());
+    }
+
     /* Aviso al final, una vez, con todo junto: si el SAT publica varias listas
        el mismo día no tiene sentido mandar un correo por cada una. Un fallo
        aquí no puede tumbar la ingesta: el dato ya está cargado. */

@@ -195,6 +195,47 @@ CREATE TABLE IF NOT EXISTS dof_corridas (
   KEY ix_corrida (corrida_en)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================================
+--  Equivalencias mensuales de ~69 monedas contra el dólar (DOF).
+--  Banxico las publica en el DOF entre los días 4 y 7 del mes siguiente.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS dof_publicaciones (
+  id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  periodo        CHAR(7)         NOT NULL,        -- 'AAAA-MM' al que aplica la tabla
+  codigo_dof     VARCHAR(20)     NULL,            -- código de nota_detalle.php
+  fecha_publicacion DATE         NULL,            -- cuándo salió en el DOF
+  -- El pie de la nota, tal cual. Se guarda porque el NÚMERO de la llamada NO
+  -- es estable entre publicaciones: en 2021 «2/» quería decir «expresado por
+  -- mil unidades» y en 2026 quiere decir «yuan cotizado fuera de China
+  -- continental», porque al añadir la fila de China las llamadas rotaron.
+  -- Quien compare contra un número fijo se equivoca sin enterarse.
+  notas_pie      TEXT            NULL,
+  ingresado_en   DATETIME        NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_periodo (periodo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS dof_equivalencias (
+  id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  publicacion_id BIGINT UNSIGNED NOT NULL,
+  periodo        CHAR(7)         NOT NULL,
+  pais           VARCHAR(80)     NOT NULL,
+  moneda         VARCHAR(60)     NOT NULL,
+  nota           VARCHAR(6)      NULL,            -- la llamada tal cual: '2/', '3/'…
+  -- Derivada al leer el pie, no del número: si la equivalencia viene expresada
+  -- por mil unidades, aquí queda dicho sin que nadie tenga que interpretar
+  -- llamadas. Sin esto, un dong vietnamita se convierte mil veces mal.
+  por_mil        TINYINT(1)      NOT NULL DEFAULT 0,
+  equivalencia_usd DECIMAL(18,8) NOT NULL,
+  PRIMARY KEY (id),
+  -- Un país puede tener dos monedas: China trae yuan continental y
+  -- extracontinental desde noviembre de 2021. Por eso la moneda va en la llave.
+  UNIQUE KEY uk_eq (periodo, pais, moneda),
+  KEY ix_eq_periodo (periodo),
+  KEY ix_eq_pais (pais)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ------------------------------------------------------------------ ingesta
 -- Última corrida por lista. Sirve para la alerta de "esta lista lleva N días
 -- sin cambiar", que suele significar que el SAT movió la URL.

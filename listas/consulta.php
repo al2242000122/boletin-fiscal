@@ -196,7 +196,7 @@ function url(array $cambios = []): string
     </div>
     <p class="cabecera-contacto">
       <a href="lote.php">Consulta por lote</a> · <a href="alertas.php">Alertas</a> ·
-      <a href="tipo-cambio.php">Tipo de cambio</a> ·
+      <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="equivalencias.php">Equivalencias</a> ·
       <a href="index.php">Administración</a> · <a href="../index.php">Portal</a>
     </p>
   </div>

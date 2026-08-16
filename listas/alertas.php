@@ -127,7 +127,7 @@ function url(array $c = []): string {
     </div>
     <p class="cabecera-contacto">
       <a href="consulta.php">Consultar RFC</a> · <a href="lote.php">Por lote</a> ·
-      <a href="tipo-cambio.php">Tipo de cambio</a> ·
+      <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="equivalencias.php">Equivalencias</a> ·
       <a href="index.php">Administración</a> · <a href="../index.php">Portal</a>
     </p>
   </div>

@@ -155,6 +155,23 @@ header('Cache-Control: private, no-store');
         </p>
         <span class="tarjeta-pie">Abrir</span>
       </a>
+
+      <a class="tarjeta" href="listas/equivalencias.php">
+        <div class="tarjeta-icono" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="8" r="4.6"/><circle cx="16" cy="16" r="4.6"/>
+            <path d="M12.2 4.6 19.4 11.8"/>
+          </svg>
+        </div>
+        <h2>Equivalencias de monedas</h2>
+        <p>
+          Las 69 monedas contra el dólar que Banxico publica cada mes en el DOF,
+          desde 2021. Con la conversión a pesos ya hecha y las expresadas por
+          mil unidades marcadas.
+        </p>
+        <span class="tarjeta-pie">Abrir</span>
+      </a>
     </div>
 
     <h2 class="seccion-titulo seccion-titulo-2">En desarrollo</h2>

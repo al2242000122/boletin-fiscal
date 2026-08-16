@@ -536,7 +536,7 @@ $sinEfecto   = $procesado ? count(array_filter($ordenados, fn($r) => $r['veredic
     </div>
     <p class="cabecera-contacto">
       <a href="consulta.php">Consultar un RFC</a> · <a href="alertas.php">Alertas</a> ·
-      <a href="tipo-cambio.php">Tipo de cambio</a> ·
+      <a href="tipo-cambio.php">Tipo de cambio</a> · <a href="equivalencias.php">Equivalencias</a> ·
       <a href="index.php">Administración</a>
     </p>
   </div>

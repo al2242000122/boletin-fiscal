@@ -125,7 +125,7 @@ function tc_fecha_larga(?string $iso): string
       </div>
     </div>
     <p class="cabecera-contacto">
-      <a href="consulta.php">Listas del SAT</a> · <a href="index.php">Administración</a> ·
+      <a href="equivalencias.php">Equivalencias</a> · <a href="consulta.php">Listas del SAT</a> · <a href="index.php">Administración</a> ·
       <a href="../index.php">Portal</a>
     </p>
   </div>

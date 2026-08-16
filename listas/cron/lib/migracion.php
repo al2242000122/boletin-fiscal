@@ -32,7 +32,8 @@ function migrar_tablas_pendientes(bool $revisarDeNuevo = false): array
     if ($hecho !== null && !$revisarDeNuevo) return $hecho;
 
     $esperadas = ['snapshots', 'estatus', 'eventos', 'bitacora', 'ingestas',
-                  'dof_tipo_cambio', 'dof_corridas'];
+                  'dof_tipo_cambio', 'dof_corridas',
+                  'dof_publicaciones', 'dof_equivalencias'];
     $hay = [];
     foreach (bd()->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN) as $t) $hay[$t] = true;
 
